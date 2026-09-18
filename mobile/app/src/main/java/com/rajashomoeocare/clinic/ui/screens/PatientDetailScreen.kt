@@ -22,8 +22,12 @@ import androidx.compose.material.icons.automirrored.outlined.EventNote
 import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.LocalShipping
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material.icons.outlined.WavingHand
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -34,6 +38,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -54,8 +59,10 @@ import com.rajashomoeocare.clinic.data.UserRole
 import com.rajashomoeocare.clinic.domain.TemplateKey
 import com.rajashomoeocare.clinic.domain.Visit
 import com.rajashomoeocare.clinic.domain.displayDate
+import com.rajashomoeocare.clinic.ui.components.DateField
 import com.rajashomoeocare.clinic.ui.components.EmptyState
 import com.rajashomoeocare.clinic.ui.components.ErrorBanner
+import com.rajashomoeocare.clinic.ui.components.LabeledField
 import com.rajashomoeocare.clinic.ui.components.PatientAvatar
 import com.rajashomoeocare.clinic.ui.components.PendingMessage
 import com.rajashomoeocare.clinic.ui.components.SectionCard
@@ -84,7 +91,15 @@ fun PatientDetailScreen(
     val context = LocalContext.current
     val recall = MaterialTheme.recallColors
     val welcomeTitle = stringResource(R.string.message_welcome)
+    val reviewTitle = stringResource(R.string.message_review)
+    val confirmTitle = stringResource(R.string.message_appointment_confirmation)
+    val dispatchTitle = stringResource(R.string.message_dispatched)
     var pending by remember { mutableStateOf<Pair<TemplateKey, PendingMessage>?>(null) }
+    var showBooking by remember { mutableStateOf(false) }
+    var showDispatch by remember { mutableStateOf(false) }
+    var bookingDate by remember { mutableStateOf(LocalDate.now().plusDays(1)) }
+    var showBookingPicker by remember { mutableStateOf(false) }
+    var trackingId by remember { mutableStateOf("") }
 
     val patient = state.patient
 
@@ -225,7 +240,63 @@ fun PatientDetailScreen(
                                 )
                             },
                         )
+                        AssistChip(
+                            onClick = { showBooking = true },
+                            label = { Text(stringResource(R.string.appointments_book)) },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.EventAvailable,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            },
+                        )
+                        AssistChip(
+                            onClick = { showDispatch = true },
+                            label = { Text(stringResource(R.string.dispatch_title)) },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.LocalShipping,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            },
+                        )
+                        AssistChip(
+                            onClick = {
+                                viewModel.message(TemplateKey.REVIEW_REQUEST)?.let { body ->
+                                    pending = TemplateKey.REVIEW_REQUEST to PendingMessage(
+                                        patientName = patient.name,
+                                        phone = patient.phone,
+                                        language = patient.preferredLanguage,
+                                        body = body,
+                                        title = reviewTitle,
+                                    )
+                                }
+                            },
+                            label = { Text(stringResource(R.string.review_send)) },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.StarOutline,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            },
+                        )
                     }
+
+                    state.appointments
+                        .filter { it.status == "booked" && !it.date.isBefore(LocalDate.now()) }
+                        .forEach { appointment ->
+                            StatusPill(
+                                text = stringResource(
+                                    R.string.appointments_booked_for,
+                                    appointment.date.displayDate(),
+                                ),
+                                container = recall.settled,
+                                content = recall.onSettled,
+                            )
+                        }
                 }
             }
 
@@ -281,6 +352,80 @@ fun PatientDetailScreen(
                 scope.launch {
                     viewModel.markSent(key)
                     pending = null
+                }
+            },
+        )
+    }
+
+    // Booking and confirming are one action: pick the date, send the message.
+    if (showBooking && patient != null) {
+        AlertDialog(
+            onDismissRequest = { showBooking = false },
+            title = { Text(stringResource(R.string.appointments_book)) },
+            text = {
+                DateField(
+                    date = bookingDate,
+                    onDateChange = { bookingDate = it },
+                    label = stringResource(R.string.appointments_date),
+                    showDialog = showBookingPicker,
+                    onShowDialogChange = { showBookingPicker = it },
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showBooking = false
+                    viewModel.bookAppointment(bookingDate) { body ->
+                        if (body != null) {
+                            pending = TemplateKey.APPOINTMENT_CONFIRMATION to PendingMessage(
+                                patientName = patient.name,
+                                phone = patient.phone,
+                                language = patient.preferredLanguage,
+                                body = body,
+                                title = confirmTitle,
+                            )
+                        }
+                    }
+                }) { Text(stringResource(R.string.appointments_confirm_and_send)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBooking = false }) {
+                    Text(stringResource(R.string.form_cancel))
+                }
+            },
+        )
+    }
+
+    if (showDispatch && patient != null) {
+        AlertDialog(
+            onDismissRequest = { showDispatch = false },
+            title = { Text(stringResource(R.string.dispatch_title)) },
+            text = {
+                LabeledField(
+                    value = trackingId,
+                    onValueChange = { trackingId = it },
+                    label = stringResource(R.string.dispatch_tracking),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDispatch = false
+                    viewModel.message(
+                        TemplateKey.MEDICINE_DISPATCHED,
+                        trackingId = trackingId.trim(),
+                    )?.let { body ->
+                        pending = TemplateKey.MEDICINE_DISPATCHED to PendingMessage(
+                            patientName = patient.name,
+                            phone = patient.phone,
+                            language = patient.preferredLanguage,
+                            body = body,
+                            title = dispatchTitle,
+                        )
+                    }
+                }) { Text(stringResource(R.string.dispatch_send)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDispatch = false }) {
+                    Text(stringResource(R.string.form_cancel))
                 }
             },
         )

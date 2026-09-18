@@ -3,10 +3,12 @@ package com.rajashomoeocare.clinic.ui
 import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Today
+import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Settings
@@ -36,6 +38,7 @@ import androidx.navigation.compose.rememberNavController
 import com.rajashomoeocare.clinic.AppContainer
 import com.rajashomoeocare.clinic.R
 import com.rajashomoeocare.clinic.data.UserRole
+import com.rajashomoeocare.clinic.ui.screens.AppointmentsScreen
 import com.rajashomoeocare.clinic.ui.screens.InvestigationCompareScreen
 import com.rajashomoeocare.clinic.ui.screens.InvestigationsScreen
 import com.rajashomoeocare.clinic.ui.screens.LoginScreen
@@ -46,6 +49,7 @@ import com.rajashomoeocare.clinic.ui.screens.RecallScreen
 import com.rajashomoeocare.clinic.ui.screens.SettingsScreen
 import com.rajashomoeocare.clinic.ui.screens.TodayScreen
 import com.rajashomoeocare.clinic.ui.screens.VisitEditorScreen
+import com.rajashomoeocare.clinic.ui.vm.AppointmentsViewModel
 import com.rajashomoeocare.clinic.ui.vm.HomeViewModel
 import com.rajashomoeocare.clinic.ui.vm.InvestigationsViewModel
 import com.rajashomoeocare.clinic.ui.vm.LoginViewModel
@@ -60,6 +64,7 @@ private object Routes {
     const val TODAY = "today"
     const val RECALL = "recall"
     const val PATIENTS = "patients"
+    const val APPOINTMENTS = "appointments"
     const val SETTINGS = "settings"
     const val PATIENT_DETAIL = "patient/{patientId}"
     const val PATIENT_FORM = "patientForm?patientId={patientId}"
@@ -89,6 +94,12 @@ private val TABS = listOf(
         R.string.nav_recall,
         Icons.Filled.NotificationsActive,
         Icons.Outlined.NotificationsActive,
+    ),
+    Tab(
+        Routes.APPOINTMENTS,
+        R.string.nav_appointments,
+        Icons.Filled.EventAvailable,
+        Icons.Outlined.EventAvailable,
     ),
     Tab(Routes.PATIENTS, R.string.nav_patients, Icons.Filled.Group, Icons.Outlined.Group),
     Tab(Routes.SETTINGS, R.string.nav_settings, Icons.Filled.Settings, Icons.Outlined.Settings),
@@ -141,6 +152,16 @@ fun ClinicRoot(container: AppContainer) {
             composable(Routes.RECALL) {
                 RecallScreen(
                     viewModel = homeViewModel,
+                    onPatientClick = { navController.navigate(Routes.patientDetail(it)) },
+                )
+            }
+
+            composable(Routes.APPOINTMENTS) {
+                val vm: AppointmentsViewModel = viewModel(
+                    factory = factoryOf { AppointmentsViewModel(container.repository) },
+                )
+                AppointmentsScreen(
+                    viewModel = vm,
                     onPatientClick = { navController.navigate(Routes.patientDetail(it)) },
                 )
             }

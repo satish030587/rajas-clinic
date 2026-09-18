@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.MonitorHeart
+import androidx.compose.material.icons.outlined.QrCode2
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -65,6 +66,7 @@ import com.rajashomoeocare.clinic.ui.components.PendingMessage
 import com.rajashomoeocare.clinic.ui.components.SectionCard
 import com.rajashomoeocare.clinic.ui.components.SectionHeader
 import com.rajashomoeocare.clinic.ui.components.SendMessageSheet
+import com.rajashomoeocare.clinic.ui.components.UpiQrSheet
 import com.rajashomoeocare.clinic.ui.theme.recallColors
 import com.rajashomoeocare.clinic.ui.vm.MedicineDraft
 import com.rajashomoeocare.clinic.ui.vm.VisitEditorViewModel
@@ -84,6 +86,7 @@ fun VisitEditorScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     var showDuePicker by remember { mutableStateOf(false) }
+    var showUpiQr by remember { mutableStateOf(false) }
     var cardMessage by remember { mutableStateOf<PendingMessage?>(null) }
     val cardTitle = stringResource(R.string.card_title)
 
@@ -301,6 +304,22 @@ fun VisitEditorScreen(
                         )
                     },
                 )
+
+                // Amount pre-filled, so the patient never types the total (spec §4.10).
+                if (state.paymentMode == PaymentMode.UPI && state.total > 0) {
+                    OutlinedButton(
+                        onClick = { showUpiQr = true },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Icon(
+                            Icons.Outlined.QrCode2,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.upi_show_qr))
+                    }
+                }
             }
 
             Spacer(Modifier.height(20.dp))
@@ -336,6 +355,15 @@ fun VisitEditorScreen(
             message = message,
             onDismiss = { cardMessage = null },
             onSent = { cardMessage = null },
+        )
+    }
+
+    if (showUpiQr) {
+        UpiQrSheet(
+            upiId = state.clinic?.upiId.orEmpty(),
+            payeeName = state.clinic?.name.orEmpty(),
+            amount = state.total,
+            onDismiss = { showUpiQr = false },
         )
     }
 }

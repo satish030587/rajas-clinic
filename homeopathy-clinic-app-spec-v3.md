@@ -470,29 +470,29 @@ Every phase ships something usable on its own.
 *Unblocks every other phase.*
 
 - [ ] Provision the cloud VM, HTTPS, **automated daily database backups**
-- [ ] FastAPI: auth with roles, patients, visits, vitals, invoices, templates, file upload
-- [ ] Alembic migrations for the v3 model
-- [ ] Android: login screen, role-aware navigation
-- [ ] Android: server-as-truth with a local cache and an offline write queue
-- [ ] Reception flow: register → vitals → start visit
-- [ ] Doctor flow: **Waiting** queue on Today, open patient with vitals pre-filled
-- [ ] **Language switch in Settings** — wire it up here so every later screen is built bilingual
-- [ ] **Duplicate-phone check on registration** — closes an existing gap, and manual
+- [x] FastAPI: auth with roles, patients, visits, vitals, invoices, templates, file upload
+- [x] Alembic migrations for the v3 model
+- [x] Android: login screen, role-aware navigation
+- [x] Android: server-as-truth with an offline write queue
+- [x] Reception flow: register → vitals → start visit
+- [x] Doctor flow: **Waiting** queue on Today, open patient with vitals pre-filled
+- [x] **Language switch in Settings** — wired early so every later screen is built bilingual
+- [x] **Duplicate-phone check on registration** — closes an existing gap, and manual
       migration makes duplicates certain without it
-- [ ] **Quick-add mode** + carry-forward visit, for the migration backlog pass (§4.11)
+- [x] **Quick-add mode** + carry-forward visit, for the migration backlog pass (§4.11)
 
 ### Phase B — Consultation depth
-- [ ] Vitals capture and display on the visit screen
-- [ ] Medicine list (any number) replacing the single remedy field
-- [ ] The six cards, seeded with English + Tamil text and editable in Settings
-- [ ] Share the card to the patient's WhatsApp in their language
-- [ ] Investigations: capture, group by title, compare two dates side by side
+- [x] Vitals capture and display on the visit screen
+- [x] Medicine list (any number) replacing the single remedy field
+- [x] The six cards, seeded with English + Tamil text and editable in Settings
+- [x] Share the card to the patient's WhatsApp in their language
+- [x] Investigations: capture, group by title, compare two dates side by side
 
 ### Phase C — Messaging and the front desk
-- [ ] Clinic profile in Settings
-- [ ] Four new templates seeded with the doctor's existing wording, EN + TA
-- [ ] Appointments: book, confirm, remind, show on Today, auto-mark attended
-- [ ] UPI QR with the amount at billing
+- [x] Clinic profile in Settings
+- [x] Four new templates seeded with the doctor's existing wording, EN + TA
+- [x] Appointments: book, confirm, remind, show on Today, auto-mark attended
+- [x] UPI QR with the amount at billing
 
 ### Phase D — Pharmacy
 - [ ] Pharmacy role and login

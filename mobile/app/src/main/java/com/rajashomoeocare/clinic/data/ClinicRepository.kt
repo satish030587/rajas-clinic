@@ -3,6 +3,7 @@ package com.rajashomoeocare.clinic.data
 import com.rajashomoeocare.clinic.BuildConfig
 import com.rajashomoeocare.clinic.data.remote.ApiService
 import com.rajashomoeocare.clinic.data.remote.AppointmentCreate
+import com.rajashomoeocare.clinic.data.remote.ClinicProfileDto
 import com.rajashomoeocare.clinic.data.remote.ClinicalUpdate
 import com.rajashomoeocare.clinic.data.remote.InvestigationCreate
 import com.rajashomoeocare.clinic.data.remote.MessageLogCreate
@@ -292,6 +293,12 @@ class ClinicRepository(
     }
 
     suspend fun clinic() = call { api.clinic() }
+
+    suspend fun updateClinic(profile: ClinicProfileDto) =
+        call { api.updateClinic(profile) }
+
+    suspend fun appointmentsFor(patientId: String): Result<List<Appointment>> =
+        call { api.appointments(patientId = patientId).map { it.toDomain() } }
 
     suspend fun setUiLanguage(language: Language) =
         call { api.updateMe(UserPatch(uiLanguage = language.wire)) }

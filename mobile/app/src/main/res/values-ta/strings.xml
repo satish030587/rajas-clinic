@@ -75,6 +75,43 @@
     <!-- Offline queue -->
     <string name="outbox_saved_offline">சேமிக்கப்பட்டது. இணைப்பு வந்ததும் ஒத்திசைக்கப்படும்.</string>
 
+    <!-- UPI -->
+    <string name="upi_show_qr">UPI QR காட்டவும்</string>
+    <string name="upi_scan_to_pay">ஸ்கேன் செய்து செலுத்தவும்</string>
+    <string name="upi_not_configured">QR காட்ட அமைப்புகளில் UPI ஐடியைச் சேர்க்கவும்.</string>
+
+    <!-- Appointments -->
+    <string name="appointments_title">சந்திப்புகள்</string>
+    <string name="appointments_book">சந்திப்பு பதிவு செய்யவும்</string>
+    <string name="appointments_date">சந்திப்பு தேதி</string>
+    <string name="appointments_booked_for">%1$s அன்று பதிவு</string>
+    <string name="appointments_reminders_tomorrow">நாளைக்கான நினைவூட்டல்கள்</string>
+    <string name="appointments_none_tomorrow">நாளை யாரும் பதிவு செய்யவில்லை.</string>
+    <string name="appointments_send_reminder">நினைவூட்டல் அனுப்பவும்</string>
+    <string name="appointments_reminder_sent">அனுப்பப்பட்டது</string>
+    <string name="appointments_confirm_and_send">பதிவு செய்து உறுதிப்படுத்தல் அனுப்பவும்</string>
+
+    <!-- Dispatch and review -->
+    <string name="dispatch_title">மருந்து அனுப்பப்பட்டது</string>
+    <string name="dispatch_tracking">ட்ராக்கிங் ஐடி</string>
+    <string name="dispatch_send">அனுப்பியதற்கான செய்தி</string>
+    <string name="review_send">கருத்து கேட்கவும்</string>
+
+    <!-- Clinic profile -->
+    <string name="settings_clinic">மருத்துவமனை விவரங்கள்</string>
+    <string name="settings_clinic_desc">ஒவ்வொரு நோயாளி செய்தியிலும் பயன்படுகிறது.</string>
+    <string name="clinic_name">மருத்துவமனை பெயர்</string>
+    <string name="clinic_doctor">மருத்துவர் பெயர்</string>
+    <string name="clinic_qualifications">தகுதிகள்</string>
+    <string name="clinic_phone">தொலைபேசி எண்</string>
+    <string name="clinic_address">முகவரி</string>
+    <string name="clinic_landmark">அடையாளம்</string>
+    <string name="clinic_map_link">Google Maps இணைப்பு</string>
+    <string name="clinic_hours">வேலை நேரம்</string>
+    <string name="clinic_review_link">Google விமர்சன இணைப்பு</string>
+    <string name="clinic_upi">UPI ஐடி</string>
+    <string name="clinic_default_fee">இயல்பு ஆலோசனைக் கட்டணம்</string>
+
     <!-- Common state -->
     <string name="common_retry">மீண்டும் முயற்சிக்கவும்</string>
     <string name="common_loading">ஏற்றுகிறது…</string>
@@ -85,6 +122,7 @@
     <!-- Navigation -->
     <string name="nav_today">இன்று</string>
     <string name="nav_recall">நினைவூட்டல்</string>
+    <string name="nav_appointments">பதிவு</string>
     <string name="nav_patients">நோயாளிகள்</string>
     <string name="nav_settings">அமைப்புகள்</string>
 

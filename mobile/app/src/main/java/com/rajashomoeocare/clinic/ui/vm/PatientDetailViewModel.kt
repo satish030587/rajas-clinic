@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.rajashomoeocare.clinic.data.ClinicRepository
 import com.rajashomoeocare.clinic.data.WriteOutcome
 import com.rajashomoeocare.clinic.data.remote.ClinicProfileDto
+import com.rajashomoeocare.clinic.domain.Appointment
 import com.rajashomoeocare.clinic.domain.Card
 import com.rajashomoeocare.clinic.domain.Language
 import com.rajashomoeocare.clinic.domain.Patient
@@ -23,6 +24,7 @@ data class PatientDetailState(
     val visits: List<Visit> = emptyList(),
     val cards: List<Card> = emptyList(),
     val clinic: ClinicProfileDto? = null,
+    val appointments: List<Appointment> = emptyList(),
     val loading: Boolean = true,
     val error: String? = null,
     val notice: String? = null,
@@ -57,6 +59,9 @@ class PatientDetailViewModel(
         }
         repo.cards().onSuccess { cards -> _state.update { it.copy(cards = cards) } }
         repo.clinic().onSuccess { c -> _state.update { it.copy(clinic = c) } }
+        repo.appointmentsFor(patientId).onSuccess { list ->
+            _state.update { it.copy(appointments = list) }
+        }
         if (templates.isEmpty()) repo.templates().onSuccess { templates = it }
 
         _state.update { it.copy(loading = false) }
@@ -72,7 +77,11 @@ class PatientDetailViewModel(
         }
     }
 
-    fun message(key: TemplateKey, appointmentDate: LocalDate? = null): String? {
+    fun message(
+        key: TemplateKey,
+        appointmentDate: LocalDate? = null,
+        trackingId: String? = null,
+    ): String? {
         val patient = _state.value.patient ?: return null
         val body = templates[key to patient.preferredLanguage]
             ?: templates[key to Language.EN]
@@ -84,6 +93,7 @@ class PatientDetailViewModel(
             dueDate = _state.value.nextDue,
             lastVisit = _state.value.visits.firstOrNull()?.visitDate,
             appointmentDate = appointmentDate,
+            trackingId = trackingId,
         )
     }
 
@@ -98,11 +108,19 @@ class PatientDetailViewModel(
         repo.logMessage(patient.id, key, patient.preferredLanguage)
     }
 
-    fun bookAppointment(date: LocalDate) = viewModelScope.launch {
-        repo.bookAppointment(patientId, date)
-            .onSuccess { _state.update { s -> s.copy(notice = "Appointment booked") } }
-            .onFailure { e -> _state.update { it.copy(error = e.message) } }
-    }
+    /**
+     * Books the date, then hands back the confirmation text so the caller can
+     * open WhatsApp with it. Booking and confirming are one action to the user.
+     */
+    fun bookAppointment(date: LocalDate, onBooked: (String?) -> Unit) =
+        viewModelScope.launch {
+            repo.bookAppointment(patientId, date)
+                .onSuccess {
+                    _state.update { s -> s.copy(appointments = s.appointments + it) }
+                    onBooked(message(TemplateKey.APPOINTMENT_CONFIRMATION, date))
+                }
+                .onFailure { e -> _state.update { it.copy(error = e.message) } }
+        }
 
     fun clearNotice() = _state.update { it.copy(notice = null, error = null) }
 }

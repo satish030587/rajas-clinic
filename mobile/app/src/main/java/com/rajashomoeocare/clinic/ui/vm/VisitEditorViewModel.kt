@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rajashomoeocare.clinic.data.ClinicRepository
 import com.rajashomoeocare.clinic.data.WriteOutcome
+import com.rajashomoeocare.clinic.data.remote.ClinicProfileDto
 import com.rajashomoeocare.clinic.domain.Billing
 import com.rajashomoeocare.clinic.domain.Card
 import com.rajashomoeocare.clinic.domain.Medicine
@@ -37,6 +38,7 @@ data class MedicineDraft(
 data class VisitEditorState(
     val visit: Visit? = null,
     val patient: Patient? = null,
+    val clinic: ClinicProfileDto? = null,
     val vitals: Vitals? = null,
     val complaint: String = "",
     val medicines: List<MedicineDraft> = listOf(MedicineDraft()),
@@ -76,7 +78,8 @@ class VisitEditorViewModel(
 
             val cards = repo.cards().getOrDefault(emptyList())
             val patient = repo.patient(visit.patientId).getOrNull()
-            val defaultFee = repo.clinic().getOrNull()?.defaultConsultationFee ?: 200
+            val clinic = repo.clinic().getOrNull()
+            val defaultFee = clinic?.defaultConsultationFee ?: 200
 
             val existing = visit.medicines.map {
                 MedicineDraft(
@@ -91,6 +94,7 @@ class VisitEditorViewModel(
                 it.copy(
                     visit = visit,
                     patient = patient,
+                    clinic = clinic,
                     vitals = visit.vitals,
                     complaint = visit.complaint.orEmpty(),
                     medicines = existing.ifEmpty { listOf(MedicineDraft()) },

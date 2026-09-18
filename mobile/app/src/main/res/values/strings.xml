@@ -76,6 +76,43 @@
     <!-- Offline queue -->
     <string name="outbox_saved_offline">Saved. It will sync when the network returns.</string>
 
+    <!-- UPI -->
+    <string name="upi_show_qr">Show UPI QR</string>
+    <string name="upi_scan_to_pay">Scan to pay</string>
+    <string name="upi_not_configured">Add the clinic UPI ID in Settings to show a QR.</string>
+
+    <!-- Appointments -->
+    <string name="appointments_title">Appointments</string>
+    <string name="appointments_book">Book appointment</string>
+    <string name="appointments_date">Appointment date</string>
+    <string name="appointments_booked_for">Booked for %1$s</string>
+    <string name="appointments_reminders_tomorrow">Reminders for tomorrow</string>
+    <string name="appointments_none_tomorrow">Nobody is booked for tomorrow.</string>
+    <string name="appointments_send_reminder">Send reminder</string>
+    <string name="appointments_reminder_sent">Sent</string>
+    <string name="appointments_confirm_and_send">Book and send confirmation</string>
+
+    <!-- Dispatch and review -->
+    <string name="dispatch_title">Medicine dispatched</string>
+    <string name="dispatch_tracking">Tracking ID</string>
+    <string name="dispatch_send">Send dispatch message</string>
+    <string name="review_send">Ask for a review</string>
+
+    <!-- Clinic profile -->
+    <string name="settings_clinic">Clinic details</string>
+    <string name="settings_clinic_desc">Used in every patient message, so nothing is typed twice.</string>
+    <string name="clinic_name">Clinic name</string>
+    <string name="clinic_doctor">Doctor name</string>
+    <string name="clinic_qualifications">Qualifications</string>
+    <string name="clinic_phone">Clinic phone</string>
+    <string name="clinic_address">Address</string>
+    <string name="clinic_landmark">Landmark</string>
+    <string name="clinic_map_link">Google Maps link</string>
+    <string name="clinic_hours">Working hours</string>
+    <string name="clinic_review_link">Google review link</string>
+    <string name="clinic_upi">UPI ID</string>
+    <string name="clinic_default_fee">Default consultation fee</string>
+
     <!-- Common state -->
     <string name="common_retry">Retry</string>
     <string name="common_loading">Loading…</string>
@@ -86,6 +123,7 @@
     <!-- Navigation -->
     <string name="nav_today">Today</string>
     <string name="nav_recall">Recall</string>
+    <string name="nav_appointments">Booked</string>
     <string name="nav_patients">Patients</string>
     <string name="nav_settings">Settings</string>
 

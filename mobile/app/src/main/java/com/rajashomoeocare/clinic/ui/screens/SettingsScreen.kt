@@ -36,10 +36,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rajashomoeocare.clinic.R
 import com.rajashomoeocare.clinic.data.UserRole
+import com.rajashomoeocare.clinic.data.remote.ClinicProfileDto
 import com.rajashomoeocare.clinic.domain.Language
 import com.rajashomoeocare.clinic.domain.TEMPLATE_PLACEHOLDERS
 import com.rajashomoeocare.clinic.domain.TemplateKey
@@ -123,8 +125,17 @@ fun SettingsScreen(
                 )
             }
 
-            // Template editing is doctor-only (spec §6).
+            // Clinic details and templates are doctor-only (spec §6).
             if (role == UserRole.DOCTOR) {
+                SectionHeader(stringResource(R.string.settings_clinic))
+                Text(
+                    text = stringResource(R.string.settings_clinic_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
+                )
+                state.clinic?.let { ClinicEditor(profile = it, onSave = viewModel::saveClinic) }
+
                 SectionHeader(stringResource(R.string.settings_templates))
                 Text(
                     text = stringResource(R.string.settings_templates_desc),
@@ -207,6 +218,78 @@ fun SettingsScreen(
             }
 
             Spacer(Modifier.height(32.dp))
+        }
+    }
+}
+
+/**
+ * Every field here is quoted by a message template, so nothing — address,
+ * hours, map link, UPI id — is ever hard-coded into the app.
+ */
+@Composable
+private fun ClinicEditor(
+    profile: ClinicProfileDto,
+    onSave: (ClinicProfileDto) -> Unit,
+) {
+    var draft by remember(profile) { mutableStateOf(profile) }
+    val dirty = draft != profile
+
+    SectionCard {
+        LabeledField(draft.name, { draft = draft.copy(name = it) },
+            stringResource(R.string.clinic_name))
+        LabeledField(draft.doctorName, { draft = draft.copy(doctorName = it) },
+            stringResource(R.string.clinic_doctor))
+        LabeledField(
+            draft.doctorQualifications,
+            { draft = draft.copy(doctorQualifications = it) },
+            stringResource(R.string.clinic_qualifications),
+        )
+        LabeledField(
+            draft.phone, { draft = draft.copy(phone = it) },
+            stringResource(R.string.clinic_phone),
+            keyboardType = KeyboardType.Phone,
+        )
+        LabeledField(
+            draft.address, { draft = draft.copy(address = it) },
+            stringResource(R.string.clinic_address),
+            singleLine = false, minLines = 3,
+        )
+        LabeledField(draft.landmark, { draft = draft.copy(landmark = it) },
+            stringResource(R.string.clinic_landmark))
+        LabeledField(
+            draft.mapLink, { draft = draft.copy(mapLink = it) },
+            stringResource(R.string.clinic_map_link),
+            keyboardType = KeyboardType.Uri,
+        )
+        LabeledField(draft.workingHours, { draft = draft.copy(workingHours = it) },
+            stringResource(R.string.clinic_hours))
+        LabeledField(
+            draft.reviewLink, { draft = draft.copy(reviewLink = it) },
+            stringResource(R.string.clinic_review_link),
+            keyboardType = KeyboardType.Uri,
+        )
+        LabeledField(draft.upiId, { draft = draft.copy(upiId = it) },
+            stringResource(R.string.clinic_upi))
+        LabeledField(
+            draft.defaultConsultationFee.toString(),
+            { value ->
+                draft = draft.copy(
+                    defaultConsultationFee = value.filter(Char::isDigit)
+                        .toIntOrNull() ?: 0,
+                )
+            },
+            stringResource(R.string.clinic_default_fee),
+            keyboardType = KeyboardType.Number,
+            prefix = "₹",
+        )
+
+        Button(
+            onClick = { onSave(draft) },
+            enabled = dirty,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+        ) {
+            Text(stringResource(R.string.form_save))
         }
     }
 }

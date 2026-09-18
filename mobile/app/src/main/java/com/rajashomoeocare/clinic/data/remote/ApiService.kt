@@ -136,4 +136,14 @@ interface ApiService {
 
     @GET("clinic")
     suspend fun clinic(): ClinicProfileDto
+
+    @PATCH("clinic")
+    suspend fun updateClinic(@Body body: ClinicProfileDto): ClinicProfileDto
+
+    @GET("appointments")
+    suspend fun appointments(
+        @Query("from_date") from: String? = null,
+        @Query("to_date") to: String? = null,
+        @Query("patient_id") patientId: String? = null,
+    ): List<AppointmentDto>
 }

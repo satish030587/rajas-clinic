@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rajashomoeocare.clinic.data.ClinicRepository
 import com.rajashomoeocare.clinic.data.SessionStore
+import com.rajashomoeocare.clinic.data.remote.ClinicProfileDto
 import com.rajashomoeocare.clinic.domain.Card
 import com.rajashomoeocare.clinic.domain.Language
 import com.rajashomoeocare.clinic.domain.TemplateKey
@@ -16,6 +17,7 @@ import kotlinx.coroutines.launch
 data class SettingsState(
     val templates: Map<Pair<TemplateKey, Language>, String> = emptyMap(),
     val cards: List<Card> = emptyList(),
+    val clinic: ClinicProfileDto? = null,
     val clinicName: String = "",
     val displayName: String = "",
     val role: String = "",
@@ -55,8 +57,24 @@ class SettingsViewModel(
         _state.update { it.copy(loading = true) }
         repo.templates().onSuccess { t -> _state.update { it.copy(templates = t) } }
         repo.cards().onSuccess { c -> _state.update { it.copy(cards = c) } }
-        repo.clinic().onSuccess { c -> _state.update { it.copy(clinicName = c.name) } }
+        repo.clinic().onSuccess { c ->
+            _state.update { it.copy(clinic = c, clinicName = c.name) }
+        }
         _state.update { it.copy(loading = false) }
+    }
+
+    /**
+     * Clinic details live on the server so both devices — and every message
+     * template — read the same address, hours and links (spec §4.9).
+     */
+    fun saveClinic(profile: ClinicProfileDto) = viewModelScope.launch {
+        repo.updateClinic(profile)
+            .onSuccess { saved ->
+                _state.update {
+                    it.copy(clinic = saved, clinicName = saved.name, notice = "Saved")
+                }
+            }
+            .onFailure { e -> _state.update { it.copy(error = e.message) } }
     }
 
     fun template(key: TemplateKey, language: Language): String =
