@@ -58,6 +58,23 @@
     <string name="form_duplicate_open">அந்த நோயாளியைத் திறக்கவும்</string>
     <string name="form_save_and_queue">சேமித்து வரிசையில் சேர்க்கவும்</string>
 
+    <!-- Investigations -->
+    <string name="investigations_title">அறிக்கைகள் &amp; ஸ்கேன்</string>
+    <string name="investigations_add">அறிக்கை சேர்க்கவும்</string>
+    <string name="investigations_new">புதிய அறிக்கை</string>
+    <string name="investigations_report_title">அறிக்கையின் தலைப்பு</string>
+    <string name="investigations_title_hint">ஒவ்வொரு முறையும் ஒரே தலைப்பைப் பயன்படுத்தவும் (எ.கா. “Kidney USG”), அப்போதுதான் ஒப்பிட முடியும்.</string>
+    <string name="investigations_taken_on">எடுத்த தேதி</string>
+    <string name="investigations_note">குறிப்பு</string>
+    <string name="investigations_empty">அறிக்கைகள் இல்லை.</string>
+    <string name="investigations_empty_hint">நோயாளி கொண்டுவரும் ஸ்கேன் அறிக்கையைப் புகைப்படம் எடுக்கவும்.</string>
+    <string name="investigations_count">%1$d பதிவு</string>
+    <string name="investigations_add_followup">அடுத்த ஸ்கேனைச் சேர்க்கவும்</string>
+    <string name="detail_reports">அறிக்கைகள்</string>
+
+    <!-- Offline queue -->
+    <string name="outbox_saved_offline">சேமிக்கப்பட்டது. இணைப்பு வந்ததும் ஒத்திசைக்கப்படும்.</string>
+
     <!-- Common state -->
     <string name="common_retry">மீண்டும் முயற்சிக்கவும்</string>
     <string name="common_loading">ஏற்றுகிறது…</string>
@@ -219,6 +236,11 @@
     <plurals name="visit_count">
         <item quantity="one">%d வருகை</item>
         <item quantity="other">%d வருகைகள்</item>
+    </plurals>
+
+    <plurals name="outbox_pending">
+        <item quantity="one">%d மாற்றம் ஒத்திசைவுக்காக காத்திருக்கிறது</item>
+        <item quantity="other">%d மாற்றங்கள் ஒத்திசைவுக்காக காத்திருக்கின்றன</item>
     </plurals>
 
     <plurals name="overdue_banner">

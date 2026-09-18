@@ -12,12 +12,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.EventNote
 import androidx.compose.material.icons.outlined.Call
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.WavingHand
@@ -73,6 +76,7 @@ fun PatientDetailScreen(
     role: UserRole,
     onBack: () -> Unit,
     onEdit: () -> Unit,
+    onOpenReports: () -> Unit,
     onOpenVisit: (String) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -173,7 +177,11 @@ fun PatientDetailScreen(
                         )
                     }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // Scrolls rather than wraps — chip labels grow in Tamil.
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
                         AssistChip(
                             onClick = { context.dialNumber(patient.phone) },
                             label = { Text(stringResource(R.string.detail_call)) },
@@ -201,6 +209,17 @@ fun PatientDetailScreen(
                             leadingIcon = {
                                 Icon(
                                     Icons.Outlined.WavingHand,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            },
+                        )
+                        AssistChip(
+                            onClick = onOpenReports,
+                            label = { Text(stringResource(R.string.detail_reports)) },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Outlined.Description,
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp),
                                 )

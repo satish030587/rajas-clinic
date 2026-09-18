@@ -1,5 +1,6 @@
 package com.rajashomoeocare.clinic.ui
 
+import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Group
@@ -35,6 +36,8 @@ import androidx.navigation.compose.rememberNavController
 import com.rajashomoeocare.clinic.AppContainer
 import com.rajashomoeocare.clinic.R
 import com.rajashomoeocare.clinic.data.UserRole
+import com.rajashomoeocare.clinic.ui.screens.InvestigationCompareScreen
+import com.rajashomoeocare.clinic.ui.screens.InvestigationsScreen
 import com.rajashomoeocare.clinic.ui.screens.LoginScreen
 import com.rajashomoeocare.clinic.ui.screens.PatientDetailScreen
 import com.rajashomoeocare.clinic.ui.screens.PatientFormScreen
@@ -44,6 +47,7 @@ import com.rajashomoeocare.clinic.ui.screens.SettingsScreen
 import com.rajashomoeocare.clinic.ui.screens.TodayScreen
 import com.rajashomoeocare.clinic.ui.screens.VisitEditorScreen
 import com.rajashomoeocare.clinic.ui.vm.HomeViewModel
+import com.rajashomoeocare.clinic.ui.vm.InvestigationsViewModel
 import com.rajashomoeocare.clinic.ui.vm.LoginViewModel
 import com.rajashomoeocare.clinic.ui.vm.PatientDetailViewModel
 import com.rajashomoeocare.clinic.ui.vm.PatientFormViewModel
@@ -60,10 +64,15 @@ private object Routes {
     const val PATIENT_DETAIL = "patient/{patientId}"
     const val PATIENT_FORM = "patientForm?patientId={patientId}"
     const val VISIT = "visit/{visitId}"
+    const val INVESTIGATIONS = "investigations/{patientId}"
+    const val COMPARE = "compare/{patientId}/{title}"
 
     fun patientDetail(id: String) = "patient/$id"
     fun patientForm(id: String? = null) = "patientForm?patientId=${id.orEmpty()}"
     fun visit(visitId: String) = "visit/$visitId"
+    fun investigations(patientId: String) = "investigations/$patientId"
+    fun compare(patientId: String, title: String) =
+        "compare/$patientId/${Uri.encode(title)}"
 }
 
 private data class Tab(
@@ -168,6 +177,9 @@ fun ClinicRoot(container: AppContainer) {
                     role = role,
                     onBack = navController::popBackStack,
                     onEdit = { navController.navigate(Routes.patientForm(patientId)) },
+                    onOpenReports = {
+                        navController.navigate(Routes.investigations(patientId))
+                    },
                     onOpenVisit = { visitId ->
                         if (role == UserRole.DOCTOR) {
                             navController.navigate(Routes.visit(visitId))
@@ -206,6 +218,37 @@ fun ClinicRoot(container: AppContainer) {
                             popUpTo(Routes.PATIENT_FORM) { inclusive = true }
                         }
                     },
+                )
+            }
+
+            composable(Routes.INVESTIGATIONS) { entry ->
+                val patientId = entry.arguments?.getString("patientId").orEmpty()
+                val vm: InvestigationsViewModel = viewModel(
+                    factory = factoryOf {
+                        InvestigationsViewModel(container.repository, patientId)
+                    },
+                )
+                InvestigationsScreen(
+                    viewModel = vm,
+                    onBack = navController::popBackStack,
+                    onCompare = { title ->
+                        navController.navigate(Routes.compare(patientId, title))
+                    },
+                )
+            }
+
+            composable(Routes.COMPARE) { entry ->
+                val patientId = entry.arguments?.getString("patientId").orEmpty()
+                val title = Uri.decode(entry.arguments?.getString("title").orEmpty())
+                val vm: InvestigationsViewModel = viewModel(
+                    factory = factoryOf {
+                        InvestigationsViewModel(container.repository, patientId)
+                    },
+                )
+                InvestigationCompareScreen(
+                    viewModel = vm,
+                    title = title,
+                    onBack = navController::popBackStack,
                 )
             }
 

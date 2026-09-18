@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.CloudUpload
 import androidx.compose.material.icons.outlined.CurrencyRupee
 import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material.icons.outlined.PersonAdd
@@ -31,6 +32,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -120,6 +122,15 @@ fun TodayScreen(
             state.error?.let { message ->
                 item {
                     ErrorBanner(message = message, onRetry = viewModel::refresh)
+                }
+            }
+
+            if (state.pendingWrites > 0) {
+                item {
+                    PendingSyncBanner(
+                        count = state.pendingWrites,
+                        onRetry = viewModel::refresh,
+                    )
                 }
             }
 
@@ -288,6 +299,43 @@ fun TodayScreen(
 
 @Composable
 private fun stringResourceOf(id: Int): String = stringResource(id)
+
+/** Honest about work not yet on the server, without blocking the clinic. */
+@Composable
+private fun PendingSyncBanner(count: Int, onRetry: () -> Unit) {
+    val recall = MaterialTheme.recallColors
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = recall.overdueSoon),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Outlined.CloudUpload,
+                contentDescription = null,
+                tint = recall.onOverdueSoon,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = pluralStringResource(R.plurals.outbox_pending, count, count),
+                style = MaterialTheme.typography.bodyMedium,
+                color = recall.onOverdueSoon,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onRetry) {
+                Text(
+                    text = stringResource(R.string.common_retry),
+                    color = recall.onOverdueSoon,
+                )
+            }
+        }
+    }
+}
 
 @Composable
 private fun StatTile(

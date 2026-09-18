@@ -2,6 +2,7 @@ package com.rajashomoeocare.clinic.domain
 
 import com.rajashomoeocare.clinic.data.remote.AppointmentDto
 import com.rajashomoeocare.clinic.data.remote.CardDto
+import com.rajashomoeocare.clinic.data.remote.InvestigationDto
 import com.rajashomoeocare.clinic.data.remote.InvoiceDto
 import com.rajashomoeocare.clinic.data.remote.MedicineDto
 import com.rajashomoeocare.clinic.data.remote.PatientDto
@@ -156,6 +157,30 @@ data class Card(
     fun body(language: Language) = if (language == Language.TA) bodyTa else bodyEn
 }
 
+enum class InvestigationKind(val wire: String) {
+    SCAN("scan"), LAB("lab"), XRAY("xray"), ECG("ecg"), OTHER("other");
+
+    companion object {
+        fun from(v: String?) = entries.firstOrNull { it.wire == v } ?: SCAN
+    }
+}
+
+data class InvestigationFile(val id: String, val pageNo: Int)
+
+/**
+ * An outside report the patient brought in. Grouped by [title] so the same
+ * study across months can be compared side by side (spec §4.5).
+ */
+data class Investigation(
+    val id: String,
+    val patientId: String,
+    val kind: InvestigationKind,
+    val title: String,
+    val takenOn: LocalDate,
+    val note: String?,
+    val files: List<InvestigationFile>,
+)
+
 data class Appointment(
     val id: String,
     val patientId: String,
@@ -242,6 +267,16 @@ fun VisitDto.toDomain() = Visit(
 )
 
 fun CardDto.toDomain() = Card(id, code, labelEn, labelTa, bodyEn, bodyTa)
+
+fun InvestigationDto.toDomain() = Investigation(
+    id = id,
+    patientId = patientId,
+    kind = InvestigationKind.from(kind),
+    title = title,
+    takenOn = takenOn.toDate() ?: LocalDate.now(),
+    note = note,
+    files = files.map { InvestigationFile(it.id, it.pageNo) },
+)
 
 fun AppointmentDto.toDomain() = Appointment(
     id = id,

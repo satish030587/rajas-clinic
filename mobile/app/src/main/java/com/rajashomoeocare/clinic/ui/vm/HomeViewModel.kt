@@ -25,6 +25,8 @@ data class HomeState(
     val queueNames: Map<String, PatientRow> = emptyMap(),
     val loading: Boolean = true,
     val error: String? = null,
+    /** Writes made while offline that have not reached the server yet. */
+    val pendingWrites: Int = 0,
 ) {
     val overdueCount: Int get() = summary.overdue.size
     fun overdueBy(bucket: RecallBucket) = summary.overdue.filter { it.bucket == bucket }
@@ -41,10 +43,18 @@ class HomeViewModel(private val repo: ClinicRepository) : ViewModel() {
 
     init {
         refresh()
+        viewModelScope.launch {
+            repo.pendingWrites.collect { queued ->
+                _state.update { it.copy(pendingWrites = queued.size) }
+            }
+        }
     }
 
     fun refresh() = viewModelScope.launch {
         _state.update { it.copy(loading = true, error = null) }
+
+        // Reaching the server at all means anything queued offline can go out.
+        repo.drainOutbox()
 
         val summary = repo.today()
         summary.onFailure { e ->

@@ -205,6 +205,35 @@ data class MessageLogCreate(
 )
 
 @Serializable
+data class InvestigationFileDto(
+    val id: String,
+    @SerialName("file_path") val filePath: String,
+    @SerialName("page_no") val pageNo: Int = 1,
+)
+
+@Serializable
+data class InvestigationDto(
+    val id: String,
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("visit_id") val visitId: String? = null,
+    val kind: String = "scan",
+    val title: String,
+    @SerialName("taken_on") val takenOn: String,
+    val note: String? = null,
+    val files: List<InvestigationFileDto> = emptyList(),
+)
+
+@Serializable
+data class InvestigationCreate(
+    @SerialName("patient_id") val patientId: String,
+    @SerialName("visit_id") val visitId: String? = null,
+    val kind: String = "scan",
+    val title: String,
+    @SerialName("taken_on") val takenOn: String,
+    val note: String? = null,
+)
+
+@Serializable
 data class ClinicProfileDto(
     val name: String = "",
     @SerialName("doctor_name") val doctorName: String = "",

@@ -3,6 +3,7 @@ package com.rajashomoeocare.clinic.ui.vm
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rajashomoeocare.clinic.data.ClinicRepository
+import com.rajashomoeocare.clinic.data.WriteOutcome
 import com.rajashomoeocare.clinic.domain.Billing
 import com.rajashomoeocare.clinic.domain.Card
 import com.rajashomoeocare.clinic.domain.Medicine
@@ -48,6 +49,7 @@ data class VisitEditorState(
     val paid: Boolean = true,
     val loading: Boolean = true,
     val saving: Boolean = false,
+    val queued: Boolean = false,
     val error: String? = null,
 ) {
     val total: Int
@@ -121,9 +123,9 @@ class VisitEditorViewModel(
 
     suspend fun save(complete: Boolean): Boolean {
         val s = _state.value
-        _state.update { it.copy(saving = true, error = null) }
+        _state.update { it.copy(saving = true, error = null, queued = false) }
 
-        val result = repo.saveClinical(
+        val outcome = repo.saveClinical(
             visitId = visitId,
             complaint = s.complaint.takeIf(String::isNotBlank),
             cardId = s.selectedCardId,
@@ -138,15 +140,20 @@ class VisitEditorViewModel(
             complete = complete,
         )
 
-        return result.fold(
-            onSuccess = {
-                _state.update { st -> st.copy(saving = false, visit = it) }
+        return when (outcome) {
+            is WriteOutcome.Synced -> {
+                _state.update { it.copy(saving = false, visit = outcome.visit) }
                 true
-            },
-            onFailure = { e ->
-                _state.update { it.copy(saving = false, error = e.message) }
+            }
+            // The consultation is recorded locally; the doctor is not blocked.
+            WriteOutcome.Queued -> {
+                _state.update { it.copy(saving = false, queued = true) }
+                true
+            }
+            is WriteOutcome.Failed -> {
+                _state.update { it.copy(saving = false, error = outcome.message) }
                 false
-            },
-        )
+            }
+        }
     }
 }

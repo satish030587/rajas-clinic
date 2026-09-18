@@ -1,8 +1,10 @@
 package com.rajashomoeocare.clinic.data
 
+import com.rajashomoeocare.clinic.BuildConfig
 import com.rajashomoeocare.clinic.data.remote.ApiService
 import com.rajashomoeocare.clinic.data.remote.AppointmentCreate
 import com.rajashomoeocare.clinic.data.remote.ClinicalUpdate
+import com.rajashomoeocare.clinic.data.remote.InvestigationCreate
 import com.rajashomoeocare.clinic.data.remote.MessageLogCreate
 import com.rajashomoeocare.clinic.data.remote.PatientCreate
 import com.rajashomoeocare.clinic.data.remote.QuickAddRequest
@@ -12,6 +14,8 @@ import com.rajashomoeocare.clinic.data.remote.UserPatch
 import com.rajashomoeocare.clinic.domain.Appointment
 import com.rajashomoeocare.clinic.domain.Billing
 import com.rajashomoeocare.clinic.domain.Card
+import com.rajashomoeocare.clinic.domain.Investigation
+import com.rajashomoeocare.clinic.domain.InvestigationKind
 import com.rajashomoeocare.clinic.domain.Language
 import com.rajashomoeocare.clinic.domain.Medicine
 import com.rajashomoeocare.clinic.domain.Patient
@@ -24,7 +28,13 @@ import com.rajashomoeocare.clinic.domain.toDomain
 import com.rajashomoeocare.clinic.domain.toDto
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import retrofit2.HttpException
+import java.io.File
 import java.io.IOException
 import java.time.LocalDate
 
@@ -35,7 +45,28 @@ import java.time.LocalDate
  * Every call returns a Result so screens can show a real failure instead of an
  * empty list, which on a recall screen would silently read as "nobody is due".
  */
-class ClinicRepository(private val api: ApiService) {
+/**
+ * What happened to a write. Queued is reported honestly rather than as success:
+ * a clinical record that has not reached the server must not look as if it has.
+ */
+sealed interface WriteOutcome {
+    data class Synced(val visit: Visit) : WriteOutcome
+    data object Queued : WriteOutcome
+    data class Failed(val message: String) : WriteOutcome
+}
+
+class ClinicRepository(
+    private val api: ApiService,
+    private val outbox: OutboxStore,
+    private val sync: OutboxSync,
+) {
+
+    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+
+    val pendingWrites = outbox.pending
+
+    /** Opportunistic: any successful call is proof the network is back. */
+    suspend fun drainOutbox(): Int = runCatching { sync.drain() }.getOrDefault(0)
 
     suspend fun <T> call(block: suspend () -> T): Result<T> = withContext(Dispatchers.IO) {
         try {
@@ -95,10 +126,13 @@ class ClinicRepository(private val api: ApiService) {
 
     suspend fun visit(id: String): Result<Visit> = call { api.visit(id).toDomain() }
 
-    suspend fun startVisit(patientId: String, vitals: Vitals?): Result<Visit> = call {
-        api.startVisit(
-            StartVisitRequest(patientId, vitals?.takeIf { !it.isEmpty }?.toDto())
-        ).toDomain()
+    suspend fun startVisit(patientId: String, vitals: Vitals?): WriteOutcome {
+        val body = StartVisitRequest(patientId, vitals?.takeIf { !it.isEmpty }?.toDto())
+        return queueable(
+            request = { api.startVisit(body).toDomain() },
+            kind = PendingWrite.Kind.START_VISIT,
+            payload = json.encodeToString(body),
+        )
     }
 
     suspend fun setVitals(visitId: String, vitals: Vitals): Result<Visit> =
@@ -115,18 +149,43 @@ class ClinicRepository(private val api: ApiService) {
         medicines: List<Medicine>,
         billing: Billing?,
         complete: Boolean,
-    ): Result<Visit> = call {
-        api.updateClinical(
-            visitId,
-            ClinicalUpdate(
-                complaint = complaint,
-                cardId = cardId,
-                nextVisitDue = nextVisitDue?.toString(),
-                medicines = medicines.map { it.toDto() },
-                invoice = billing?.toDto(),
-                complete = complete,
-            ),
-        ).toDomain()
+    ): WriteOutcome {
+        val body = ClinicalUpdate(
+            complaint = complaint,
+            cardId = cardId,
+            nextVisitDue = nextVisitDue?.toString(),
+            medicines = medicines.map { it.toDto() },
+            invoice = billing?.toDto(),
+            complete = complete,
+        )
+        return queueable(
+            request = { api.updateClinical(visitId, body).toDomain() },
+            kind = PendingWrite.Kind.SAVE_CLINICAL,
+            payload = json.encodeToString(body),
+            targetId = visitId,
+        )
+    }
+
+    /**
+     * Sends now, or queues if the network is down. Used only for writes that
+     * must not block clinic work; reads simply fail and show a retry.
+     */
+    private suspend fun queueable(
+        request: suspend () -> Visit,
+        kind: PendingWrite.Kind,
+        payload: String,
+        targetId: String = "",
+    ): WriteOutcome = withContext(Dispatchers.IO) {
+        try {
+            val visit = request()
+            sync.drain()
+            WriteOutcome.Synced(visit)
+        } catch (e: IOException) {
+            outbox.add(PendingWrite(kind = kind, payload = payload, targetId = targetId))
+            WriteOutcome.Queued
+        } catch (e: HttpException) {
+            WriteOutcome.Failed(e.friendlyMessage())
+        }
     }
 
     // --- recall ---
@@ -158,6 +217,46 @@ class ClinicRepository(private val api: ApiService) {
         ).toDomain()
     }
 
+    // --- investigations ---
+
+    suspend fun investigations(patientId: String): Result<List<Investigation>> =
+        call { api.investigations(patientId).map { it.toDomain() } }
+
+    suspend fun createInvestigation(
+        patientId: String,
+        title: String,
+        kind: InvestigationKind,
+        takenOn: LocalDate,
+        note: String?,
+    ): Result<Investigation> = call {
+        api.createInvestigation(
+            InvestigationCreate(
+                patientId = patientId,
+                title = title.trim(),
+                kind = kind.wire,
+                takenOn = takenOn.toString(),
+                note = note?.takeIf { it.isNotBlank() },
+            )
+        ).toDomain()
+    }
+
+    suspend fun uploadInvestigationFile(
+        investigationId: String,
+        file: File,
+        mimeType: String,
+    ): Result<Investigation> = call {
+        val part = MultipartBody.Part.createFormData(
+            "file", file.name, file.asRequestBody(mimeType.toMediaType()),
+        )
+        api.uploadInvestigationFile(investigationId, part).toDomain()
+    }
+
+    suspend fun deleteInvestigation(id: String) = call { api.deleteInvestigation(id) }
+
+    /** Reports are fetched with the same auth as everything else (see ApiClient). */
+    fun fileUrl(fileId: String): String =
+        BuildConfig.API_BASE_URL + "investigations/files/$fileId"
+
     // --- catalog ---
 
     suspend fun cards(): Result<List<Card>> = call { api.cards().map { it.toDomain() } }
@@ -171,8 +270,26 @@ class ClinicRepository(private val api: ApiService) {
     suspend fun updateTemplate(key: TemplateKey, language: Language, body: String) =
         call { api.updateTemplate(key.wire, language.wire, TemplateUpdate(body)) }
 
-    suspend fun logMessage(patientId: String, key: TemplateKey, language: Language) =
-        call { api.logMessage(MessageLogCreate(patientId, key.wire, language.wire)) }
+    suspend fun logMessage(patientId: String, key: TemplateKey, language: Language) {
+        val body = MessageLogCreate(patientId, key.wire, language.wire)
+        withContext(Dispatchers.IO) {
+            try {
+                api.logMessage(body)
+            } catch (_: IOException) {
+                // The message itself already went out via WhatsApp; only the
+                // record of it is delayed, and losing that breaks the Phase 2
+                // recall-conversion report.
+                outbox.add(
+                    PendingWrite(
+                        kind = PendingWrite.Kind.LOG_MESSAGE,
+                        payload = json.encodeToString(body),
+                    )
+                )
+            } catch (_: HttpException) {
+                // Nothing useful to do; the send still happened.
+            }
+        }
+    }
 
     suspend fun clinic() = call { api.clinic() }
 

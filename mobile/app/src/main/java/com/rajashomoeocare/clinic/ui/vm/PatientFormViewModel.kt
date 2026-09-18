@@ -3,6 +3,7 @@ package com.rajashomoeocare.clinic.ui.vm
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rajashomoeocare.clinic.data.ClinicRepository
+import com.rajashomoeocare.clinic.data.WriteOutcome
 import com.rajashomoeocare.clinic.data.remote.PatientCreate
 import com.rajashomoeocare.clinic.domain.Language
 import com.rajashomoeocare.clinic.domain.PatientRow
@@ -44,6 +45,7 @@ data class PatientFormState(
     val errors: Map<FormField, String> = emptyMap(),
     val duplicate: PatientRow? = null,
     val saving: Boolean = false,
+    val queuedOffline: Boolean = false,
     val error: String? = null,
 ) {
     val isNew: Boolean get() = id == null
@@ -156,14 +158,19 @@ class PatientFormViewModel(
         }
 
         // Reception's normal path: register, then put the patient in the queue.
+        var queued = false
         if (s.isNew && s.queueAfterSave) {
-            repo.startVisit(saved.id, s.vitals).onFailure { e ->
-                _state.update { it.copy(saving = false, error = e.message) }
-                return null
+            when (val outcome = repo.startVisit(saved.id, s.vitals)) {
+                is WriteOutcome.Failed -> {
+                    _state.update { it.copy(saving = false, error = outcome.message) }
+                    return null
+                }
+                WriteOutcome.Queued -> queued = true
+                is WriteOutcome.Synced -> Unit
             }
         }
 
-        _state.update { it.copy(saving = false, id = saved.id) }
+        _state.update { it.copy(saving = false, id = saved.id, queuedOffline = queued) }
         return saved.id
     }
 

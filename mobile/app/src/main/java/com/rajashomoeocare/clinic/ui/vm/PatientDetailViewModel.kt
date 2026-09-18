@@ -3,6 +3,7 @@ package com.rajashomoeocare.clinic.ui.vm
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rajashomoeocare.clinic.data.ClinicRepository
+import com.rajashomoeocare.clinic.data.WriteOutcome
 import com.rajashomoeocare.clinic.data.remote.ClinicProfileDto
 import com.rajashomoeocare.clinic.domain.Card
 import com.rajashomoeocare.clinic.domain.Language
@@ -62,9 +63,13 @@ class PatientDetailViewModel(
     }
 
     fun startVisit(onQueued: (String) -> Unit) = viewModelScope.launch {
-        repo.startVisit(patientId, null)
-            .onSuccess { onQueued(it.id) }
-            .onFailure { e -> _state.update { it.copy(error = e.message) } }
+        when (val outcome = repo.startVisit(patientId, null)) {
+            is WriteOutcome.Synced -> onQueued(outcome.visit.id)
+            WriteOutcome.Queued -> _state.update {
+                it.copy(notice = "Saved offline. It will sync when the network returns.")
+            }
+            is WriteOutcome.Failed -> _state.update { it.copy(error = outcome.message) }
+        }
     }
 
     fun message(key: TemplateKey, appointmentDate: LocalDate? = null): String? {

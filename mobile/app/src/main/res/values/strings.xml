@@ -59,6 +59,23 @@
     <string name="form_duplicate_open">Open that patient</string>
     <string name="form_save_and_queue">Save and add to queue</string>
 
+    <!-- Investigations -->
+    <string name="investigations_title">Reports &amp; scans</string>
+    <string name="investigations_add">Add report</string>
+    <string name="investigations_new">New report</string>
+    <string name="investigations_report_title">Report title</string>
+    <string name="investigations_title_hint">Use the same title each time, such as “Kidney USG”, so later scans line up for comparison.</string>
+    <string name="investigations_taken_on">Taken on</string>
+    <string name="investigations_note">Note</string>
+    <string name="investigations_empty">No reports yet.</string>
+    <string name="investigations_empty_hint">Photograph a scan or lab report the patient brings in.</string>
+    <string name="investigations_count">%1$d on record</string>
+    <string name="investigations_add_followup">Add a follow-up scan</string>
+    <string name="detail_reports">Reports</string>
+
+    <!-- Offline queue -->
+    <string name="outbox_saved_offline">Saved. It will sync when the network returns.</string>
+
     <!-- Common state -->
     <string name="common_retry">Retry</string>
     <string name="common_loading">Loading…</string>
@@ -224,6 +241,11 @@
     <plurals name="visit_count">
         <item quantity="one">%d visit</item>
         <item quantity="other">%d visits</item>
+    </plurals>
+
+    <plurals name="outbox_pending">
+        <item quantity="one">%d change waiting to sync</item>
+        <item quantity="other">%d changes waiting to sync</item>
     </plurals>
 
     <plurals name="overdue_banner">

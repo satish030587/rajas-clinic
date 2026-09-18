@@ -1,9 +1,12 @@
 package com.rajashomoeocare.clinic.data.remote
 
+import android.content.Context
+import coil.ImageLoader
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.rajashomoeocare.clinic.BuildConfig
 import com.rajashomoeocare.clinic.data.SessionStore
 import kotlinx.serialization.json.Json
+import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -18,8 +21,8 @@ object ApiClient {
         encodeDefaults = true
     }
 
-    fun create(sessionStore: SessionStore, baseUrl: String = BuildConfig.API_BASE_URL): ApiService {
-        val auth = okhttp3.Interceptor { chain ->
+    fun httpClient(sessionStore: SessionStore): OkHttpClient {
+        val auth = Interceptor { chain ->
             val token = sessionStore.tokenBlocking()
             val request = if (token.isNullOrBlank()) {
                 chain.request()
@@ -31,7 +34,7 @@ object ApiClient {
             chain.proceed(request)
         }
 
-        val client = OkHttpClient.Builder()
+        return OkHttpClient.Builder()
             .addInterceptor(auth)
             .apply {
                 if (BuildConfig.DEBUG) {
@@ -42,16 +45,32 @@ object ApiClient {
                     )
                 }
             }
-            // The clinic runs on WiFi; fail fast rather than freezing a consultation.
-            .connectTimeout(10, TimeUnit.SECONDS)
-            .readTimeout(20, TimeUnit.SECONDS)
+            // Short connect timeout on purpose: when the router is down, a save
+            // should drop into the offline queue in a few seconds rather than
+            // leaving the doctor staring at a disabled button mid-consultation.
+            .connectTimeout(4, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
             .build()
-
-        return Retrofit.Builder()
-            .baseUrl(baseUrl)
-            .client(client)
-            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-            .build()
-            .create(ApiService::class.java)
     }
+
+    fun create(
+        client: OkHttpClient,
+        baseUrl: String = BuildConfig.API_BASE_URL,
+    ): ApiService = Retrofit.Builder()
+        .baseUrl(baseUrl)
+        .client(client)
+        .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
+        .build()
+        .create(ApiService::class.java)
+
+    /**
+     * Scan and report images live behind the same token as the rest of the API,
+     * so Coil has to use the authenticated client rather than its own.
+     */
+    fun imageLoader(context: Context, client: OkHttpClient): ImageLoader =
+        ImageLoader.Builder(context)
+            .okHttpClient(client)
+            .crossfade(true)
+            .build()
 }
