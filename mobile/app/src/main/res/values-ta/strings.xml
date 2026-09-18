@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_tagline">குணமாக்கும் வாழ்வு…</string>
+
+    <!-- Lock -->
+    <string name="lock_title">உங்கள் PIN ஐ உள்ளிடவும்</string>
+    <string name="lock_setup_title">4 இலக்க PIN அமைக்கவும்</string>
+    <string name="lock_confirm_title">PIN ஐ உறுதிப்படுத்தவும்</string>
+    <string name="lock_wrong_pin">தவறான PIN. மீண்டும் முயற்சிக்கவும்.</string>
+    <string name="lock_mismatch">PIN பொருந்தவில்லை. மீண்டும் தொடங்கவும்.</string>
+    <string name="lock_use_biometric">கைரேகையைப் பயன்படுத்தவும்</string>
+    <string name="lock_biometric_title">Rajas Homoeo Care ஐத் திறக்கவும்</string>
+    <string name="lock_biometric_subtitle">தொடர உங்கள் கைரேகையை உறுதிப்படுத்தவும்</string>
+
+    <!-- Navigation -->
+    <string name="nav_today">இன்று</string>
+    <string name="nav_recall">நினைவூட்டல்</string>
+    <string name="nav_patients">நோயாளிகள்</string>
+    <string name="nav_settings">அமைப்புகள்</string>
+
+    <!-- Today -->
+    <string name="today_title">இன்று</string>
+    <string name="today_due_today">இன்று வர வேண்டியவர்கள்</string>
+    <string name="today_seen_today">இன்று பார்த்தவர்கள்</string>
+    <string name="today_collection">இன்றைய வசூல்</string>
+    <string name="today_empty">இன்று யாரும் வர வேண்டியதில்லை.</string>
+    <string name="today_new_patient">புதிய நோயாளி</string>
+
+    <!-- Recall -->
+    <string name="recall_title">நினைவூட்ட வேண்டியவர்கள்</string>
+    <string name="recall_overdue_week">இந்த வாரம் தாமதம்</string>
+    <string name="recall_overdue_month">இந்த மாதம் தாமதம்</string>
+    <string name="recall_overdue_long">ஒரு மாதத்திற்கு மேல் தாமதம்</string>
+    <string name="recall_empty">யாரும் தாமதமாகவில்லை.</string>
+    <string name="recall_send">நினைவூட்டல் அனுப்பவும்</string>
+    <string name="recall_send_short">அனுப்பு</string>
+    <string name="recall_sent">நினைவூட்டல் அனுப்பப்பட்டது</string>
+    <string name="recall_days_overdue">%1$d நாட்கள் தாமதம்</string>
+    <string name="recall_due_today">இன்று வர வேண்டும்</string>
+    <string name="recall_overdue_banner">%1$d நோயாளிகள் நினைவூட்டல் தாமதம்</string>
+
+    <!-- Patients -->
+    <string name="patients_title">நோயாளிகள்</string>
+    <string name="patients_search_hint">பெயர் அல்லது தொலைபேசி எண்ணால் தேடவும்</string>
+    <string name="patients_empty">இதுவரை நோயாளிகள் இல்லை.</string>
+    <string name="patients_no_results">தேடலுக்கு நோயாளி எதுவும் இல்லை.</string>
+    <string name="patients_add">நோயாளியைச் சேர்க்கவும்</string>
+    <string name="patients_count">%1$d நோயாளிகள்</string>
+
+    <!-- Patient form -->
+    <string name="form_new_patient">புதிய நோயாளி</string>
+    <string name="form_edit_patient">நோயாளியைத் திருத்தவும்</string>
+    <string name="form_name">முழுப் பெயர்</string>
+    <string name="form_phone">தொலைபேசி எண்</string>
+    <string name="form_alt_phone">மாற்று தொலைபேசி எண்</string>
+    <string name="form_sex">பாலினம்</string>
+    <string name="form_age">வயது</string>
+    <string name="form_dob">பிறந்த தேதி</string>
+    <string name="form_address">முகவரி</string>
+    <string name="form_occupation">தொழில்</string>
+    <string name="form_blood_group">இரத்தப் பிரிவு</string>
+    <string name="form_referred_by">பரிந்துரைத்தவர்</string>
+    <string name="form_current_medication">தற்போதைய மருந்து</string>
+    <string name="form_language">விருப்ப மொழி</string>
+    <string name="form_save">சேமிக்கவும்</string>
+    <string name="form_cancel">ரத்து செய்</string>
+    <string name="form_required">தேவை</string>
+    <string name="form_invalid_phone">சரியான 10 இலக்க எண்ணை உள்ளிடவும்</string>
+    <string name="form_age_or_dob">வயது அல்லது பிறந்த தேதியை உள்ளிடவும்</string>
+    <string name="form_section_identity">அடையாளம்</string>
+    <string name="form_section_contact">தொடர்பு</string>
+    <string name="form_section_clinical">மருத்துவப் பின்னணி</string>
+
+    <!-- Patient detail -->
+    <string name="detail_visits">வருகைகள்</string>
+    <string name="detail_profile">விவரம்</string>
+    <string name="detail_new_visit">புதிய வருகை</string>
+    <string name="detail_no_visits">இதுவரை வருகை பதிவு இல்லை.</string>
+    <string name="detail_next_due">அடுத்த வருகை</string>
+    <string name="detail_call">அழைக்கவும்</string>
+    <string name="detail_whatsapp">WhatsApp</string>
+    <string name="detail_edit">திருத்தவும்</string>
+    <string name="detail_archive">காப்பகப்படுத்தவும்</string>
+    <string name="detail_total_visits">%1$d வருகைகள்</string>
+    <string name="detail_photo_count">%1$d புகைப்படங்கள்</string>
+
+    <!-- Visit -->
+    <string name="visit_title">புதிய வருகை</string>
+    <string name="visit_edit_title">வருகையைத் திருத்தவும்</string>
+    <string name="visit_date">வருகை தேதி</string>
+    <string name="visit_complaint">குறைபாடு</string>
+    <string name="visit_remedy">கொடுத்த மருந்து</string>
+    <string name="visit_potency">சக்தி</string>
+    <string name="visit_advice">அறிவுரை</string>
+    <string name="visit_next_due">அடுத்த வருகை தேதி</string>
+    <string name="visit_photos">புகைப்படங்கள்</string>
+    <string name="visit_add_photo">புகைப்படம் சேர்க்கவும்</string>
+    <string name="visit_compare">ஒப்பிடவும்</string>
+    <string name="visit_billing">கட்டணம்</string>
+    <string name="visit_consultation_fee">ஆலோசனைக் கட்டணம்</string>
+    <string name="visit_medicine_charge">மருந்துக் கட்டணம்</string>
+    <string name="visit_total">மொத்தம்</string>
+    <string name="visit_payment_mode">பணம் செலுத்தும் முறை</string>
+    <string name="visit_paid">செலுத்தப்பட்டது</string>
+    <string name="visit_unpaid">செலுத்தப்படவில்லை</string>
+    <string name="visit_save">வருகையைச் சேமிக்கவும்</string>
+    <string name="visit_next_due_hint">நினைவூட்டலை அமைக்கிறது</string>
+
+    <!-- Photos -->
+    <string name="photo_compare_title">புகைப்பட ஒப்பீடு</string>
+    <string name="photo_previous">முந்தையது</string>
+    <string name="photo_latest">சமீபத்தியது</string>
+    <string name="photo_caption">விளக்கம்</string>
+    <string name="photo_take">புகைப்படம் எடுக்கவும்</string>
+    <string name="photo_choose">கேலரியிலிருந்து தேர்ந்தெடுக்கவும்</string>
+    <string name="photo_delete">புகைப்படத்தை நீக்கவும்</string>
+    <string name="photo_none">இந்த நோயாளிக்கு புகைப்படங்கள் இல்லை.</string>
+
+    <!-- Messages -->
+    <string name="message_welcome">வரவேற்பு செய்தி</string>
+    <string name="message_recall">நினைவூட்டல் செய்தி</string>
+    <string name="message_preview">செய்தி முன்னோட்டம்</string>
+    <string name="message_open_whatsapp">WhatsApp ஐத் திறக்கவும்</string>
+    <string name="message_mark_sent">அனுப்பியதாகக் குறிக்கவும்</string>
+    <string name="message_no_whatsapp">இந்தச் சாதனத்தில் WhatsApp இல்லை.</string>
+    <string name="message_history">செய்தி வரலாறு</string>
+    <string name="message_never_sent">இதுவரை செய்தி அனுப்பப்படவில்லை.</string>
+
+    <!-- Settings -->
+    <string name="settings_title">அமைப்புகள்</string>
+    <string name="settings_templates">செய்தி வார்ப்புருக்கள்</string>
+    <string name="settings_templates_desc">வரவேற்பு மற்றும் நினைவூட்டல் வாசகம்</string>
+    <string name="settings_fee">இயல்பு ஆலோசனைக் கட்டணம்</string>
+    <string name="settings_security">செயலி பூட்டு</string>
+    <string name="settings_change_pin">PIN ஐ மாற்றவும்</string>
+    <string name="settings_biometric">கைரேகையால் திறக்கவும்</string>
+    <string name="settings_about">பற்றி</string>
+    <string name="settings_version">பதிப்பு %1$s</string>
+    <string name="settings_template_english">ஆங்கிலம்</string>
+    <string name="settings_template_tamil">தமிழ்</string>
+    <string name="settings_placeholders">பயன்படுத்தக்கூடியவை: %1$s</string>
+    <string name="settings_saved">சேமிக்கப்பட்டது</string>
+
+    <!-- Common -->
+    <string name="common_male">ஆண்</string>
+    <string name="common_female">பெண்</string>
+    <string name="common_other">மற்றவை</string>
+    <string name="common_english">ஆங்கிலம்</string>
+    <string name="common_tamil">தமிழ்</string>
+    <string name="common_cash">ரொக்கம்</string>
+    <string name="common_upi">UPI</string>
+    <string name="common_back">பின்</string>
+    <string name="common_years">%1$d வயது</string>
+    <string name="common_delete">நீக்கவும்</string>
+    <string name="common_confirm">உறுதிப்படுத்தவும்</string>
+    <string name="common_last_seen">கடைசி வருகை %1$s</string>
+
+    <plurals name="visit_count">
+        <item quantity="one">%d வருகை</item>
+        <item quantity="other">%d வருகைகள்</item>
+    </plurals>
+</resources>

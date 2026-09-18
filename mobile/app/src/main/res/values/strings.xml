@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Rajas Homoeo Care</string>
+    <string name="app_tagline">Healing Lives…</string>
+
+    <!-- Lock -->
+    <string name="lock_title">Enter your PIN</string>
+    <string name="lock_setup_title">Set a 4-digit PIN</string>
+    <string name="lock_confirm_title">Confirm your PIN</string>
+    <string name="lock_wrong_pin">Incorrect PIN. Try again.</string>
+    <string name="lock_mismatch">PINs did not match. Start again.</string>
+    <string name="lock_use_biometric">Use fingerprint</string>
+    <string name="lock_biometric_title">Unlock Rajas Homoeo Care</string>
+    <string name="lock_biometric_subtitle">Confirm your fingerprint to continue</string>
+
+    <!-- Navigation -->
+    <string name="nav_today">Today</string>
+    <string name="nav_recall">Recall</string>
+    <string name="nav_patients">Patients</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Today -->
+    <string name="today_title">Today</string>
+    <string name="today_due_today">Due today</string>
+    <string name="today_seen_today">Seen today</string>
+    <string name="today_collection">Today\'s collection</string>
+    <string name="today_empty">No patients are due today.</string>
+    <string name="today_new_patient">New patient</string>
+
+    <!-- Recall -->
+    <string name="recall_title">Due for recall</string>
+    <string name="recall_overdue_week">Overdue this week</string>
+    <string name="recall_overdue_month">Overdue this month</string>
+    <string name="recall_overdue_long">Overdue over a month</string>
+    <string name="recall_empty">Nobody is overdue. Well kept.</string>
+    <string name="recall_send">Send reminder</string>
+    <string name="recall_send_short">Send</string>
+    <string name="recall_sent">Reminder sent</string>
+    <string name="recall_days_overdue">%1$d days overdue</string>
+    <string name="recall_due_today">Due today</string>
+    <string name="recall_overdue_banner">%1$d patients are overdue for recall</string>
+
+    <!-- Patients -->
+    <string name="patients_title">Patients</string>
+    <string name="patients_search_hint">Search by name or phone</string>
+    <string name="patients_empty">No patients yet. Add your first one.</string>
+    <string name="patients_no_results">No patient matches that search.</string>
+    <string name="patients_add">Add patient</string>
+    <string name="patients_count">%1$d patients</string>
+
+    <!-- Patient form -->
+    <string name="form_new_patient">New patient</string>
+    <string name="form_edit_patient">Edit patient</string>
+    <string name="form_name">Full name</string>
+    <string name="form_phone">Phone number</string>
+    <string name="form_alt_phone">Alternate phone</string>
+    <string name="form_sex">Sex</string>
+    <string name="form_age">Age</string>
+    <string name="form_dob">Date of birth</string>
+    <string name="form_address">Address</string>
+    <string name="form_occupation">Occupation</string>
+    <string name="form_blood_group">Blood group</string>
+    <string name="form_referred_by">Referred by</string>
+    <string name="form_current_medication">Current medication</string>
+    <string name="form_language">Preferred language</string>
+    <string name="form_save">Save</string>
+    <string name="form_cancel">Cancel</string>
+    <string name="form_required">Required</string>
+    <string name="form_invalid_phone">Enter a valid 10-digit mobile number</string>
+    <string name="form_age_or_dob">Enter an age or a date of birth</string>
+    <string name="form_section_identity">Identity</string>
+    <string name="form_section_contact">Contact</string>
+    <string name="form_section_clinical">Clinical background</string>
+
+    <!-- Patient detail -->
+    <string name="detail_visits">Visits</string>
+    <string name="detail_profile">Profile</string>
+    <string name="detail_new_visit">New visit</string>
+    <string name="detail_no_visits">No visits recorded yet.</string>
+    <string name="detail_next_due">Next visit due</string>
+    <string name="detail_call">Call</string>
+    <string name="detail_whatsapp">WhatsApp</string>
+    <string name="detail_edit">Edit</string>
+    <string name="detail_archive">Archive patient</string>
+    <string name="detail_total_visits">%1$d visits</string>
+    <string name="detail_photo_count">%1$d photos</string>
+
+    <!-- Visit -->
+    <string name="visit_title">New visit</string>
+    <string name="visit_edit_title">Edit visit</string>
+    <string name="visit_date">Visit date</string>
+    <string name="visit_complaint">Complaint</string>
+    <string name="visit_remedy">Remedy given</string>
+    <string name="visit_potency">Potency</string>
+    <string name="visit_advice">Advice given</string>
+    <string name="visit_next_due">Next visit due</string>
+    <string name="visit_photos">Photos</string>
+    <string name="visit_add_photo">Add photo</string>
+    <string name="visit_compare">Compare</string>
+    <string name="visit_billing">Billing</string>
+    <string name="visit_consultation_fee">Consultation fee</string>
+    <string name="visit_medicine_charge">Medicine charge</string>
+    <string name="visit_total">Total</string>
+    <string name="visit_payment_mode">Payment mode</string>
+    <string name="visit_paid">Paid</string>
+    <string name="visit_unpaid">Unpaid</string>
+    <string name="visit_save">Save visit</string>
+    <string name="visit_next_due_hint">Sets the recall reminder</string>
+    <string name="visit_in_days">%1$d d</string>
+    <string name="visit_in_weeks">%1$d w</string>
+    <string name="visit_in_months">%1$d mo</string>
+
+    <!-- Photos -->
+    <string name="photo_compare_title">Photo comparison</string>
+    <string name="photo_previous">Previous</string>
+    <string name="photo_latest">Latest</string>
+    <string name="photo_caption">Caption</string>
+    <string name="photo_take">Take photo</string>
+    <string name="photo_choose">Choose from gallery</string>
+    <string name="photo_delete">Delete photo</string>
+    <string name="photo_none">No photos for this patient yet.</string>
+
+    <!-- Messages -->
+    <string name="message_welcome">Welcome message</string>
+    <string name="message_recall">Recall reminder</string>
+    <string name="message_preview">Message preview</string>
+    <string name="message_open_whatsapp">Open WhatsApp</string>
+    <string name="message_mark_sent">Mark as sent</string>
+    <string name="message_no_whatsapp">WhatsApp is not installed on this device.</string>
+    <string name="message_history">Message history</string>
+    <string name="message_never_sent">No messages sent yet.</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_templates">Message templates</string>
+    <string name="settings_templates_desc">Edit the welcome and recall wording</string>
+    <string name="settings_fee">Default consultation fee</string>
+    <string name="settings_security">App lock</string>
+    <string name="settings_change_pin">Change PIN</string>
+    <string name="settings_biometric">Unlock with fingerprint</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version %1$s</string>
+    <string name="settings_template_english">English</string>
+    <string name="settings_template_tamil">Tamil</string>
+    <string name="settings_placeholders">Available placeholders: %1$s</string>
+    <string name="settings_saved">Saved</string>
+
+    <!-- Common -->
+    <string name="common_male">Male</string>
+    <string name="common_female">Female</string>
+    <string name="common_other">Other</string>
+    <string name="common_english">English</string>
+    <string name="common_tamil">Tamil</string>
+    <string name="common_cash">Cash</string>
+    <string name="common_upi">UPI</string>
+    <string name="common_back">Back</string>
+    <string name="common_years">%1$d yrs</string>
+    <string name="common_rupees">₹%1$s</string>
+    <string name="common_delete">Delete</string>
+    <string name="common_confirm">Confirm</string>
+    <string name="common_last_seen">Last seen %1$s</string>
+
+    <plurals name="visit_count">
+        <item quantity="one">%d visit</item>
+        <item quantity="other">%d visits</item>
+    </plurals>
+</resources>
