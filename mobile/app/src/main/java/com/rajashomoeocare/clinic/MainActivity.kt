@@ -8,7 +8,6 @@ import androidx.fragment.app.FragmentActivity
 import com.rajashomoeocare.clinic.ui.ClinicRoot
 import com.rajashomoeocare.clinic.ui.theme.ClinicTheme
 
-// FragmentActivity (not ComponentActivity) because BiometricPrompt requires one.
 class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -19,7 +18,7 @@ class MainActivity : FragmentActivity() {
         val container = (application as ClinicApp).container
         setContent {
             ClinicTheme {
-                ClinicRoot(container = container, activity = this)
+                ClinicRoot(container = container)
             }
         }
     }

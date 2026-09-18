@@ -20,13 +20,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -38,17 +34,17 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.rajashomoeocare.clinic.AppContainer
 import com.rajashomoeocare.clinic.R
-import com.rajashomoeocare.clinic.ui.screens.LockScreen
+import com.rajashomoeocare.clinic.data.UserRole
+import com.rajashomoeocare.clinic.ui.screens.LoginScreen
 import com.rajashomoeocare.clinic.ui.screens.PatientDetailScreen
 import com.rajashomoeocare.clinic.ui.screens.PatientFormScreen
 import com.rajashomoeocare.clinic.ui.screens.PatientsScreen
-import com.rajashomoeocare.clinic.ui.screens.PhotoCompareScreen
 import com.rajashomoeocare.clinic.ui.screens.RecallScreen
 import com.rajashomoeocare.clinic.ui.screens.SettingsScreen
 import com.rajashomoeocare.clinic.ui.screens.TodayScreen
 import com.rajashomoeocare.clinic.ui.screens.VisitEditorScreen
 import com.rajashomoeocare.clinic.ui.vm.HomeViewModel
-import com.rajashomoeocare.clinic.ui.vm.LockViewModel
+import com.rajashomoeocare.clinic.ui.vm.LoginViewModel
 import com.rajashomoeocare.clinic.ui.vm.PatientDetailViewModel
 import com.rajashomoeocare.clinic.ui.vm.PatientFormViewModel
 import com.rajashomoeocare.clinic.ui.vm.PatientsViewModel
@@ -63,15 +59,11 @@ private object Routes {
     const val SETTINGS = "settings"
     const val PATIENT_DETAIL = "patient/{patientId}"
     const val PATIENT_FORM = "patientForm?patientId={patientId}"
-    const val VISIT = "visit/{patientId}?visitId={visitId}"
-    const val COMPARE = "compare/{patientId}"
+    const val VISIT = "visit/{visitId}"
 
     fun patientDetail(id: String) = "patient/$id"
     fun patientForm(id: String? = null) = "patientForm?patientId=${id.orEmpty()}"
-    fun visit(patientId: String, visitId: String? = null) =
-        "visit/$patientId?visitId=${visitId.orEmpty()}"
-
-    fun compare(patientId: String) = "compare/$patientId"
+    fun visit(visitId: String) = "visit/$visitId"
 }
 
 private data class Tab(
@@ -94,21 +86,19 @@ private val TABS = listOf(
 )
 
 @Composable
-fun ClinicRoot(container: AppContainer, activity: FragmentActivity) {
-    var unlocked by remember { mutableStateOf(false) }
+fun ClinicRoot(container: AppContainer) {
+    val session by container.session.session.collectAsStateWithLifecycle(initialValue = null)
 
-    if (!unlocked) {
-        val lockViewModel: LockViewModel = viewModel(
-            factory = factoryOf { LockViewModel(container.settings) },
+    if (session == null) {
+        val loginViewModel: LoginViewModel = viewModel(
+            factory = factoryOf { LoginViewModel(container.api, container.session) },
         )
-        LockScreen(
-            viewModel = lockViewModel,
-            activity = activity,
-            onUnlocked = { unlocked = true },
-        )
+        // The session flow emitting is what advances past this gate.
+        LoginScreen(viewModel = loginViewModel, onSignedIn = {})
         return
     }
 
+    val role = session!!.role
     val navController = rememberNavController()
     val homeViewModel: HomeViewModel = viewModel(
         factory = factoryOf { HomeViewModel(container.repository) },
@@ -132,7 +122,9 @@ fun ClinicRoot(container: AppContainer, activity: FragmentActivity) {
             composable(Routes.TODAY) {
                 TodayScreen(
                     viewModel = homeViewModel,
+                    role = role,
                     onPatientClick = { navController.navigate(Routes.patientDetail(it)) },
+                    onOpenVisit = { navController.navigate(Routes.visit(it)) },
                     onAddPatient = { navController.navigate(Routes.patientForm()) },
                 )
             }
@@ -158,10 +150,10 @@ fun ClinicRoot(container: AppContainer, activity: FragmentActivity) {
             composable(Routes.SETTINGS) {
                 val vm: SettingsViewModel = viewModel(
                     factory = factoryOf {
-                        SettingsViewModel(container.repository, container.settings)
+                        SettingsViewModel(container.repository, container.session)
                     },
                 )
-                SettingsScreen(viewModel = vm)
+                SettingsScreen(viewModel = vm, role = role, onSignedOut = {})
             }
 
             composable(Routes.PATIENT_DETAIL) { entry ->
@@ -173,16 +165,23 @@ fun ClinicRoot(container: AppContainer, activity: FragmentActivity) {
                 )
                 PatientDetailScreen(
                     viewModel = vm,
+                    role = role,
                     onBack = navController::popBackStack,
                     onEdit = { navController.navigate(Routes.patientForm(patientId)) },
-                    onNewVisit = { navController.navigate(Routes.visit(patientId)) },
-                    onEditVisit = { navController.navigate(Routes.visit(patientId, it)) },
-                    onCompare = { navController.navigate(Routes.compare(patientId)) },
+                    onOpenVisit = { visitId ->
+                        if (role == UserRole.DOCTOR) {
+                            navController.navigate(Routes.visit(visitId))
+                        } else {
+                            // Reception queues the patient, then returns to Today.
+                            navController.popBackStack(Routes.TODAY, inclusive = false)
+                        }
+                    },
                 )
             }
 
             composable(Routes.PATIENT_FORM) { entry ->
-                val patientId = entry.arguments?.getString("patientId")?.takeIf(String::isNotEmpty)
+                val patientId = entry.arguments?.getString("patientId")
+                    ?.takeIf(String::isNotEmpty)
                 val vm: PatientFormViewModel = viewModel(
                     factory = factoryOf {
                         PatientFormViewModel(container.repository, patientId)
@@ -190,8 +189,10 @@ fun ClinicRoot(container: AppContainer, activity: FragmentActivity) {
                 )
                 PatientFormScreen(
                     viewModel = vm,
+                    canRecordVitals = true,
                     onBack = navController::popBackStack,
                     onSaved = { savedId ->
+                        homeViewModel.refresh()
                         if (patientId == null) {
                             navController.navigate(Routes.patientDetail(savedId)) {
                                 popUpTo(Routes.PATIENT_FORM) { inclusive = true }
@@ -200,38 +201,29 @@ fun ClinicRoot(container: AppContainer, activity: FragmentActivity) {
                             navController.popBackStack()
                         }
                     },
+                    onOpenExisting = { existingId ->
+                        navController.navigate(Routes.patientDetail(existingId)) {
+                            popUpTo(Routes.PATIENT_FORM) { inclusive = true }
+                        }
+                    },
                 )
             }
 
             composable(Routes.VISIT) { entry ->
-                val patientId = entry.arguments?.getString("patientId").orEmpty()
-                val visitId = entry.arguments?.getString("visitId")?.takeIf(String::isNotEmpty)
+                val visitId = entry.arguments?.getString("visitId").orEmpty()
                 val vm: VisitEditorViewModel = viewModel(
                     factory = factoryOf {
-                        VisitEditorViewModel(
-                            repo = container.repository,
-                            settings = container.settings,
-                            patientId = patientId,
-                            existingVisitId = visitId,
-                        )
+                        VisitEditorViewModel(container.repository, visitId)
                     },
                 )
                 VisitEditorScreen(
                     viewModel = vm,
                     onBack = navController::popBackStack,
-                    onSaved = { navController.popBackStack() },
-                    onCompare = { navController.navigate(Routes.compare(patientId)) },
-                )
-            }
-
-            composable(Routes.COMPARE) { entry ->
-                val patientId = entry.arguments?.getString("patientId").orEmpty()
-                val vm: PatientDetailViewModel = viewModel(
-                    factory = factoryOf {
-                        PatientDetailViewModel(container.repository, patientId)
+                    onCompleted = {
+                        homeViewModel.refresh()
+                        navController.popBackStack(Routes.TODAY, inclusive = false)
                     },
                 )
-                PhotoCompareScreen(viewModel = vm, onBack = navController::popBackStack)
             }
         }
     }
@@ -242,7 +234,6 @@ private fun ClinicBottomBar(navController: NavHostController, overdueCount: Int)
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
 
-    // The bar is only meaningful on the four top-level tabs.
     val onTab = TABS.any { tab ->
         currentDestination?.hierarchy?.any { it.route == tab.route } == true
     }

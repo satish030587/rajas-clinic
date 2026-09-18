@@ -1,9 +1,8 @@
 package com.rajashomoeocare.clinic.ui.screens
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,24 +15,23 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.AddAPhoto
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.automirrored.outlined.CompareArrows
-import androidx.compose.material.icons.outlined.PhotoLibrary
-import androidx.compose.material3.AssistChip
+import androidx.compose.material.icons.outlined.MonitorHeart
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -48,27 +46,29 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.rememberAsyncImagePainter
 import com.rajashomoeocare.clinic.R
-import com.rajashomoeocare.clinic.data.local.PaymentMode
+import com.rajashomoeocare.clinic.domain.Card
+import com.rajashomoeocare.clinic.domain.Language
+import com.rajashomoeocare.clinic.domain.MedicineForm
+import com.rajashomoeocare.clinic.domain.PaymentMode
+import com.rajashomoeocare.clinic.domain.Vitals
 import com.rajashomoeocare.clinic.ui.components.ChoiceRow
 import com.rajashomoeocare.clinic.ui.components.DateField
+import com.rajashomoeocare.clinic.ui.components.ErrorBanner
 import com.rajashomoeocare.clinic.ui.components.LabeledField
+import com.rajashomoeocare.clinic.ui.components.PendingMessage
 import com.rajashomoeocare.clinic.ui.components.SectionCard
 import com.rajashomoeocare.clinic.ui.components.SectionHeader
+import com.rajashomoeocare.clinic.ui.components.SendMessageSheet
 import com.rajashomoeocare.clinic.ui.theme.recallColors
+import com.rajashomoeocare.clinic.ui.vm.MedicineDraft
 import com.rajashomoeocare.clinic.ui.vm.VisitEditorViewModel
-import com.rajashomoeocare.clinic.util.importPhoto
-import com.rajashomoeocare.clinic.util.newCameraTarget
 import kotlinx.coroutines.launch
-import java.io.File
 import java.time.LocalDate
 
 /** Quick offsets for the next-visit date — the field the recall system runs on. */
@@ -79,46 +79,20 @@ private val QUICK_INTERVALS = listOf(7L, 15L, 30L, 45L)
 fun VisitEditorScreen(
     viewModel: VisitEditorViewModel,
     onBack: () -> Unit,
-    onSaved: () -> Unit,
-    onCompare: () -> Unit,
+    onCompleted: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-    var showVisitDatePicker by remember { mutableStateOf(false) }
     var showDuePicker by remember { mutableStateOf(false) }
-    var cameraTarget by remember { mutableStateOf<File?>(null) }
-
-    val takePhoto = rememberLauncherForActivityResult(
-        ActivityResultContracts.TakePicture()
-    ) { success ->
-        cameraTarget?.let { file ->
-            if (success) viewModel.addPhoto(file.absolutePath) else file.delete()
-        }
-        cameraTarget = null
-    }
-
-    val pickPhoto = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            scope.launch {
-                importPhoto(context, uri)?.let { viewModel.addPhoto(it.absolutePath) }
-            }
-        }
-    }
+    var cardMessage by remember { mutableStateOf<PendingMessage?>(null) }
+    val cardTitle = stringResource(R.string.card_title)
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Column {
-                        Text(
-                            stringResource(
-                                if (state.isNew) R.string.visit_title
-                                else R.string.visit_edit_title
-                            )
-                        )
+                        Text(stringResource(R.string.visit_title))
                         state.patient?.let {
                             Text(
                                 text = it.name,
@@ -129,10 +103,7 @@ fun VisitEditorScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = {
-                        viewModel.discardUnsaved()
-                        onBack()
-                    }) {
+                    IconButton(onClick = onBack) {
                         Icon(
                             Icons.AutoMirrored.Outlined.ArrowBack,
                             contentDescription = stringResource(R.string.common_back),
@@ -146,6 +117,16 @@ fun VisitEditorScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
+        if (state.loading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = Alignment.Center,
+            ) { CircularProgressIndicator() }
+            return@Scaffold
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -155,123 +136,106 @@ fun VisitEditorScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            state.error?.let { ErrorBanner(message = it) }
+
+            // Already filled in at the front desk — the doctor only reads it.
+            state.vitals?.takeIf { !it.isEmpty }?.let { VitalsSummary(it) }
+
             SectionCard {
-                DateField(
-                    date = state.visitDate,
-                    onDateChange = { v -> viewModel.edit { it.copy(visitDate = v) } },
-                    label = stringResource(R.string.visit_date),
-                    showDialog = showVisitDatePicker,
-                    onShowDialogChange = { showVisitDatePicker = it },
-                )
                 LabeledField(
                     value = state.complaint,
                     onValueChange = { v -> viewModel.edit { it.copy(complaint = v) } },
                     label = stringResource(R.string.visit_complaint),
                     singleLine = false,
-                    minLines = 2,
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    LabeledField(
-                        value = state.remedy,
-                        onValueChange = { v -> viewModel.edit { it.copy(remedy = v) } },
-                        label = stringResource(R.string.visit_remedy),
-                        modifier = Modifier.weight(2f),
-                    )
-                    LabeledField(
-                        value = state.potency,
-                        onValueChange = { v -> viewModel.edit { it.copy(potency = v) } },
-                        label = stringResource(R.string.visit_potency),
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                LabeledField(
-                    value = state.advice,
-                    onValueChange = { v -> viewModel.edit { it.copy(advice = v) } },
-                    label = stringResource(R.string.visit_advice),
-                    singleLine = false,
-                    minLines = 2,
+                    minLines = 3,
                 )
             }
 
-            SectionHeader(stringResource(R.string.visit_next_due))
-            NextVisitCard(
-                dueDate = state.nextVisitDue,
-                visitDate = state.visitDate,
-                onSelect = { v -> viewModel.edit { it.copy(nextVisitDue = v) } },
-                showPicker = showDuePicker,
-                onShowPickerChange = { showDuePicker = it },
-            )
-
             SectionHeader(
-                text = stringResource(R.string.visit_photos),
-                trailing = (state.photos.size + state.pendingPhotos.size).toString(),
+                text = stringResource(R.string.medicines_title),
+                trailing = state.medicines.count { !it.isBlank }.toString(),
             )
             SectionCard {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AssistChip(
-                        onClick = {
-                            val (file, uri) = newCameraTarget(context)
-                            cameraTarget = file
-                            takePhoto.launch(uri)
-                        },
-                        label = { Text(stringResource(R.string.photo_take)) },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Outlined.AddAPhoto,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        },
-                    )
-                    AssistChip(
-                        onClick = {
-                            pickPhoto.launch(
-                                androidx.activity.result.PickVisualMediaRequest(
-                                    ActivityResultContracts.PickVisualMedia.ImageOnly
-                                )
-                            )
-                        },
-                        label = { Text(stringResource(R.string.photo_choose)) },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Outlined.PhotoLibrary,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        },
+                state.medicines.forEachIndexed { index, draft ->
+                    MedicineRow(
+                        draft = draft,
+                        canRemove = state.medicines.size > 1,
+                        onChange = { viewModel.updateMedicine(index, it) },
+                        onRemove = { viewModel.removeMedicine(index) },
                     )
                 }
-
-                val thumbs = state.photos.map { it.filePath } + state.pendingPhotos
-                if (thumbs.isNotEmpty()) {
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(thumbs, key = { it }) { path ->
-                            PhotoThumb(
-                                path = path,
-                                onRemove = {
-                                    val saved = state.photos.firstOrNull { it.filePath == path }
-                                    if (saved != null) {
-                                        viewModel.removeSavedPhoto(saved)
-                                    } else {
-                                        viewModel.removePendingPhoto(path)
-                                    }
-                                },
-                            )
-                        }
-                    }
+                TextButton(onClick = viewModel::addMedicine) {
+                    Icon(
+                        Icons.Outlined.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.medicine_add))
                 }
+            }
 
-                if (state.priorPhotos.isNotEmpty()) {
-                    TextButton(onClick = onCompare) {
+            SectionHeader(stringResource(R.string.card_title))
+            SectionCard {
+                Text(
+                    text = stringResource(R.string.card_none_selected),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                state.cards.forEach { card ->
+                    CardOption(
+                        card = card,
+                        language = state.patient?.preferredLanguage ?: Language.EN,
+                        selected = card.id == state.selectedCardId,
+                        onSelect = { viewModel.edit { it.copy(selectedCardId = card.id) } },
+                    )
+                }
+                val patient = state.patient
+                val chosen = state.selectedCard
+                if (patient != null && chosen != null) {
+                    OutlinedButton(
+                        onClick = {
+                            cardMessage = PendingMessage(
+                                patientName = patient.name,
+                                phone = patient.phone,
+                                language = patient.preferredLanguage,
+                                body = chosen.body(patient.preferredLanguage),
+                                title = cardTitle,
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
                         Icon(
-                            Icons.AutoMirrored.Outlined.CompareArrows,
+                            Icons.AutoMirrored.Filled.Send,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp),
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.visit_compare))
+                        Text(stringResource(R.string.card_send))
                     }
                 }
+            }
+
+            SectionHeader(stringResource(R.string.visit_next_due))
+            SectionCard {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    QUICK_INTERVALS.forEach { days ->
+                        val target = LocalDate.now().plusDays(days)
+                        FilterChip(
+                            selected = state.nextVisitDue == target,
+                            onClick = { viewModel.edit { it.copy(nextVisitDue = target) } },
+                            label = { Text("$days d") },
+                        )
+                    }
+                }
+                DateField(
+                    date = state.nextVisitDue,
+                    onDateChange = { v -> viewModel.edit { it.copy(nextVisitDue = v) } },
+                    label = stringResource(R.string.visit_next_due),
+                    supporting = stringResource(R.string.visit_next_due_hint),
+                    showDialog = showDuePicker,
+                    onShowDialogChange = { showDuePicker = it },
+                )
             }
 
             SectionHeader(stringResource(R.string.visit_billing))
@@ -341,79 +305,167 @@ fun VisitEditorScreen(
 
             Spacer(Modifier.height(20.dp))
             Button(
-                onClick = { scope.launch { if (viewModel.save()) onSaved() } },
+                onClick = {
+                    scope.launch { if (viewModel.save(complete = true)) onCompleted() }
+                },
                 enabled = !state.saving,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(14.dp),
             ) {
-                Text(stringResource(R.string.visit_save))
+                Text(stringResource(R.string.common_complete_visit))
+            }
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = { scope.launch { viewModel.save(complete = false) } },
+                enabled = !state.saving,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(14.dp),
+            ) {
+                Text(stringResource(R.string.common_save_draft))
             }
             Spacer(Modifier.height(32.dp))
         }
     }
+
+    cardMessage?.let { message ->
+        SendMessageSheet(
+            message = message,
+            onDismiss = { cardMessage = null },
+            onSent = { cardMessage = null },
+        )
+    }
 }
 
 @Composable
-private fun NextVisitCard(
-    dueDate: LocalDate?,
-    visitDate: LocalDate,
-    onSelect: (LocalDate) -> Unit,
-    showPicker: Boolean,
-    onShowPickerChange: (Boolean) -> Unit,
-) {
+private fun VitalsSummary(vitals: Vitals) {
     val recall = MaterialTheme.recallColors
     SectionCard {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            QUICK_INTERVALS.forEach { days ->
-                val target = visitDate.plusDays(days)
-                FilterChip(
-                    selected = dueDate == target,
-                    onClick = { onSelect(target) },
-                    label = { Text("$days d") },
-                    colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = recall.dueToday,
-                        selectedLabelColor = recall.onDueToday,
-                    ),
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Outlined.MonitorHeart,
+                contentDescription = null,
+                tint = recall.onDueToday,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(Modifier.width(10.dp))
+            Column {
+                Text(
+                    text = stringResource(R.string.vitals_recorded_at_desk),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = listOfNotNull(
+                        vitals.bloodPressure?.let { "BP $it" },
+                        vitals.weightKg?.let { "$it kg" },
+                        vitals.heightCm?.let { "$it cm" },
+                        vitals.pulse?.let { "Pulse $it" },
+                    ).joinToString("  ·  "),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
                 )
             }
         }
-        DateField(
-            date = dueDate,
-            onDateChange = onSelect,
-            label = stringResource(R.string.visit_next_due),
-            supporting = stringResource(R.string.visit_next_due_hint),
-            showDialog = showPicker,
-            onShowDialogChange = onShowPickerChange,
-        )
     }
 }
 
 @Composable
-private fun PhotoThumb(path: String, onRemove: () -> Unit) {
-    Box {
-        Image(
-            painter = rememberAsyncImagePainter(File(path)),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .size(88.dp)
-                .clip(RoundedCornerShape(12.dp)),
-        )
-        IconButton(
-            onClick = onRemove,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .size(28.dp),
+private fun MedicineRow(
+    draft: MedicineDraft,
+    canRemove: Boolean,
+    onChange: (MedicineDraft) -> Unit,
+    onRemove: () -> Unit,
+) {
+    Column {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                Icons.Outlined.Close,
-                contentDescription = stringResource(R.string.photo_delete),
-                tint = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(16.dp),
+            LabeledField(
+                value = draft.name,
+                onValueChange = { onChange(draft.copy(name = it)) },
+                label = stringResource(R.string.medicine_name),
+                modifier = Modifier.weight(2.2f),
             )
+            LabeledField(
+                value = draft.potency,
+                onValueChange = { onChange(draft.copy(potency = it)) },
+                label = stringResource(R.string.medicine_potency),
+                modifier = Modifier.weight(1f),
+            )
+            if (canRemove) {
+                IconButton(onClick = onRemove) {
+                    Icon(
+                        Icons.Outlined.Close,
+                        contentDescription = stringResource(R.string.medicine_remove),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
+        Spacer(Modifier.height(6.dp))
+        ChoiceRow(
+            options = listOf(MedicineForm.PILLS, MedicineForm.DROPS),
+            selected = draft.form,
+            onSelect = { onChange(draft.copy(form = it)) },
+            label = { form ->
+                stringResource(
+                    if (form == MedicineForm.PILLS) R.string.medicine_pills
+                    else R.string.medicine_drops
+                )
+            },
+        )
+        Spacer(Modifier.height(10.dp))
     }
 }
 
+@Composable
+private fun CardOption(
+    card: Card,
+    language: Language,
+    selected: Boolean,
+    onSelect: () -> Unit,
+) {
+    val border = if (selected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.outlineVariant
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .border(if (selected) 2.dp else 1.dp, border, RoundedCornerShape(14.dp))
+            .background(
+                if (selected) {
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainerLowest
+                }
+            )
+            .clickable(onClick = onSelect)
+            .padding(14.dp),
+    ) {
+        Text(
+            text = card.label(language),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = if (selected) {
+                MaterialTheme.colorScheme.onPrimaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            },
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = card.body(language),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = if (selected) Int.MAX_VALUE else 3,
+        )
+    }
+}

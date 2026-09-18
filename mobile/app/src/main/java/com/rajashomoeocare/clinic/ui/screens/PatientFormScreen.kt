@@ -15,31 +15,32 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rajashomoeocare.clinic.R
-import com.rajashomoeocare.clinic.data.local.Language
-import com.rajashomoeocare.clinic.data.local.Sex
+import com.rajashomoeocare.clinic.domain.Language
+import com.rajashomoeocare.clinic.domain.Sex
 import com.rajashomoeocare.clinic.ui.components.ChoiceRow
-import com.rajashomoeocare.clinic.ui.components.DateField
+import com.rajashomoeocare.clinic.ui.components.ErrorBanner
 import com.rajashomoeocare.clinic.ui.components.LabeledField
 import com.rajashomoeocare.clinic.ui.components.SectionCard
 import com.rajashomoeocare.clinic.ui.components.SectionHeader
@@ -51,12 +52,13 @@ import kotlinx.coroutines.launch
 @Composable
 fun PatientFormScreen(
     viewModel: PatientFormViewModel,
+    canRecordVitals: Boolean,
     onBack: () -> Unit,
     onSaved: (String) -> Unit,
+    onOpenExisting: (String) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
-    var showDobPicker by remember { mutableStateOf(false) }
 
     val requiredMessage = stringResource(R.string.form_required)
     val phoneMessage = stringResource(R.string.form_invalid_phone)
@@ -66,6 +68,29 @@ fun PatientFormScreen(
         PatientFormViewModel.ERROR_PHONE -> phoneMessage
         PatientFormViewModel.ERROR_AGE -> ageMessage
         else -> null
+    }
+
+    // Duplicate phone means a duplicated patient, and a duplicated patient
+    // means a missed recall (spec §4.11).
+    state.duplicate?.let { existing ->
+        AlertDialog(
+            onDismissRequest = viewModel::dismissDuplicate,
+            title = { Text(stringResource(R.string.patients_title)) },
+            text = {
+                Text(stringResource(R.string.form_duplicate_found, existing.name))
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.dismissDuplicate()
+                    onOpenExisting(existing.id)
+                }) { Text(stringResource(R.string.form_duplicate_open)) }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::dismissDuplicate) {
+                    Text(stringResource(R.string.form_cancel))
+                }
+            },
+        )
     }
 
     Scaffold(
@@ -103,6 +128,8 @@ fun PatientFormScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            state.error?.let { ErrorBanner(message = it) }
+
             SectionHeader(stringResource(R.string.form_section_identity))
             SectionCard {
                 LabeledField(
@@ -125,30 +152,14 @@ fun PatientFormScreen(
                         )
                     },
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    LabeledField(
-                        value = state.ageText,
-                        onValueChange = { v ->
-                            viewModel.edit {
-                                it.copy(ageText = v.filter(Char::isDigit).take(3))
-                            }
-                        },
-                        label = stringResource(R.string.form_age),
-                        keyboardType = KeyboardType.Number,
-                        error = errorFor(FormField.AGE),
-                        enabled = state.dateOfBirth == null,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Spacer(Modifier.width(0.dp))
-                }
-                DateField(
-                    date = state.dateOfBirth,
-                    onDateChange = { v ->
-                        viewModel.edit { it.copy(dateOfBirth = v, ageText = "") }
+                LabeledField(
+                    value = state.ageText,
+                    onValueChange = { v ->
+                        viewModel.edit { it.copy(ageText = v.filter(Char::isDigit).take(3)) }
                     },
-                    label = stringResource(R.string.form_dob),
-                    showDialog = showDobPicker,
-                    onShowDialogChange = { showDobPicker = it },
+                    label = stringResource(R.string.form_age),
+                    keyboardType = KeyboardType.Number,
+                    error = errorFor(FormField.AGE),
                 )
             }
 
@@ -156,7 +167,10 @@ fun PatientFormScreen(
             SectionCard {
                 LabeledField(
                     value = state.phone,
-                    onValueChange = { v -> viewModel.edit { it.copy(phone = v) } },
+                    onValueChange = { v ->
+                        viewModel.edit { it.copy(phone = v) }
+                        if (v.filter(Char::isDigit).length >= 10) viewModel.checkPhone()
+                    },
                     label = stringResource(R.string.form_phone),
                     keyboardType = KeyboardType.Phone,
                     prefix = "+91 ",
@@ -195,6 +209,65 @@ fun PatientFormScreen(
                 )
             }
 
+            // Vitals are taken at the desk so the doctor doesn't have to (spec §4.2).
+            if (canRecordVitals && state.isNew) {
+                SectionHeader(stringResource(R.string.vitals_title))
+                SectionCard {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        LabeledField(
+                            value = state.heightText,
+                            onValueChange = { v ->
+                                viewModel.edit { it.copy(heightText = v.numeric()) }
+                            },
+                            label = stringResource(R.string.vitals_height),
+                            keyboardType = KeyboardType.Decimal,
+                            modifier = Modifier.weight(1f),
+                        )
+                        LabeledField(
+                            value = state.weightText,
+                            onValueChange = { v ->
+                                viewModel.edit { it.copy(weightText = v.numeric()) }
+                            },
+                            label = stringResource(R.string.vitals_weight),
+                            keyboardType = KeyboardType.Decimal,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        LabeledField(
+                            value = state.systolicText,
+                            onValueChange = { v ->
+                                viewModel.edit {
+                                    it.copy(systolicText = v.filter(Char::isDigit).take(3))
+                                }
+                            },
+                            label = stringResource(R.string.vitals_systolic),
+                            keyboardType = KeyboardType.Number,
+                            modifier = Modifier.weight(1f),
+                        )
+                        LabeledField(
+                            value = state.diastolicText,
+                            onValueChange = { v ->
+                                viewModel.edit {
+                                    it.copy(diastolicText = v.filter(Char::isDigit).take(3))
+                                }
+                            },
+                            label = stringResource(R.string.vitals_diastolic),
+                            keyboardType = KeyboardType.Number,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    LabeledField(
+                        value = state.pulseText,
+                        onValueChange = { v ->
+                            viewModel.edit { it.copy(pulseText = v.filter(Char::isDigit).take(3)) }
+                        },
+                        label = stringResource(R.string.vitals_pulse),
+                        keyboardType = KeyboardType.Number,
+                    )
+                }
+            }
+
             SectionHeader(stringResource(R.string.form_section_clinical))
             SectionCard {
                 LabeledField(
@@ -221,20 +294,50 @@ fun PatientFormScreen(
                 )
             }
 
-            Spacer(Modifier.height(20.dp))
+            if (state.isNew) {
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = stringResource(R.string.form_queue_after_save),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Switch(
+                        checked = state.queueAfterSave,
+                        onCheckedChange = { v ->
+                            viewModel.edit { it.copy(queueAfterSave = v) }
+                        },
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
             Button(
-                onClick = {
-                    scope.launch { viewModel.save()?.let(onSaved) }
-                },
+                onClick = { scope.launch { viewModel.save()?.let(onSaved) } },
                 enabled = !state.saving,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(14.dp),
             ) {
-                Text(stringResource(R.string.form_save))
+                Text(
+                    stringResource(
+                        if (state.isNew && state.queueAfterSave) {
+                            R.string.form_save_and_queue
+                        } else {
+                            R.string.form_save
+                        }
+                    )
+                )
             }
             Spacer(Modifier.height(32.dp))
         }
     }
 }
+
+private fun String.numeric(): String =
+    filter { it.isDigit() || it == '.' }.take(5)

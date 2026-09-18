@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rajashomoeocare.clinic.R
 import com.rajashomoeocare.clinic.ui.components.EmptyState
+import com.rajashomoeocare.clinic.ui.components.ErrorBanner
 import com.rajashomoeocare.clinic.ui.components.PatientCard
 import com.rajashomoeocare.clinic.ui.vm.PatientsViewModel
 
@@ -46,8 +47,7 @@ fun PatientsScreen(
     onPatientClick: (String) -> Unit,
     onAddPatient: () -> Unit,
 ) {
-    val query by viewModel.query.collectAsStateWithLifecycle()
-    val patients by viewModel.patients.collectAsStateWithLifecycle()
+    val state by viewModel.state.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -75,37 +75,41 @@ fun PatientsScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             item(key = "search") {
-                SearchField(query = query, onQueryChange = viewModel::onQueryChange)
+                SearchField(state.query, viewModel::onQueryChange)
             }
 
-            if (patients.isEmpty()) {
+            state.error?.let { message ->
+                item { ErrorBanner(message = message, onRetry = viewModel::refresh) }
+            }
+
+            if (state.patients.isEmpty() && !state.loading && state.error == null) {
                 item {
-                    if (query.isBlank()) {
-                        EmptyState(
-                            icon = Icons.Outlined.Group,
-                            title = stringResource(R.string.patients_empty),
-                        )
-                    } else {
-                        EmptyState(
-                            icon = Icons.Outlined.SearchOff,
-                            title = stringResource(R.string.patients_no_results),
-                        )
-                    }
+                    EmptyState(
+                        icon = if (state.query.isBlank()) {
+                            Icons.Outlined.Group
+                        } else {
+                            Icons.Outlined.SearchOff
+                        },
+                        title = stringResource(
+                            if (state.query.isBlank()) {
+                                R.string.patients_empty
+                            } else {
+                                R.string.patients_no_results
+                            }
+                        ),
+                    )
                 }
-            } else {
+            } else if (state.patients.isNotEmpty()) {
                 item {
                     Text(
-                        text = stringResource(R.string.patients_count, patients.size),
+                        text = stringResource(R.string.patients_count, state.patients.size),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(start = 4.dp),
                     )
                 }
-                items(patients, key = { it.id }) { patient ->
-                    PatientCard(
-                        patient = patient,
-                        onClick = { onPatientClick(patient.id) },
-                    )
+                items(state.patients, key = { it.id }) { patient ->
+                    PatientCard(patient = patient, onClick = { onPatientClick(patient.id) })
                 }
             }
         }

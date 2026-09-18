@@ -12,6 +12,59 @@
     <string name="lock_biometric_title">Rajas Homoeo Care ஐத் திறக்கவும்</string>
     <string name="lock_biometric_subtitle">தொடர உங்கள் கைரேகையை உறுதிப்படுத்தவும்</string>
 
+    <!-- Login -->
+    <string name="login_title">தொடர உள்நுழையவும்</string>
+    <string name="login_username">பயனர் பெயர்</string>
+    <string name="login_password">கடவுச்சொல்</string>
+    <string name="login_sign_in">உள்நுழைக</string>
+    <string name="login_hint">கணக்கு தேவைப்பட்டால் மருத்துவரிடம் கேட்கவும்.</string>
+    <string name="login_sign_out">வெளியேறு</string>
+    <string name="signed_in_as">%1$s · %2$s ஆக உள்நுழைந்துள்ளீர்கள்</string>
+
+    <!-- Waiting queue -->
+    <string name="queue_title">காத்திருப்பு</string>
+    <string name="queue_empty">யாரும் காத்திருக்கவில்லை.</string>
+    <string name="queue_see_patient">நோயாளியைப் பார்க்கவும்</string>
+    <string name="queue_in_consultation">ஆலோசனையில்</string>
+    <string name="queue_waiting">காத்திருக்கிறார்</string>
+    <string name="queue_booked">இன்று பதிவு செய்தவர்கள்</string>
+
+    <!-- Vitals -->
+    <string name="vitals_title">அளவீடுகள்</string>
+    <string name="vitals_height">உயரம் (செ.மீ)</string>
+    <string name="vitals_weight">எடை (கி.கி)</string>
+    <string name="vitals_bp">இரத்த அழுத்தம்</string>
+    <string name="vitals_systolic">சிஸ்டாலிக்</string>
+    <string name="vitals_diastolic">டயஸ்டாலிக்</string>
+    <string name="vitals_pulse">நாடித்துடிப்பு (விருப்பம்)</string>
+    <string name="vitals_none">அளவீடுகள் பதிவு செய்யப்படவில்லை.</string>
+    <string name="vitals_recorded_at_desk">வரவேற்பில் பதிவு செய்யப்பட்டது</string>
+
+    <!-- Medicines and cards -->
+    <string name="medicines_title">மருந்துகள்</string>
+    <string name="medicine_name">மருந்து</string>
+    <string name="medicine_potency">சக்தி</string>
+    <string name="medicine_add">மருந்து சேர்க்கவும்</string>
+    <string name="medicine_remove">நீக்கு</string>
+    <string name="medicine_pills">மாத்திரைகள்</string>
+    <string name="medicine_drops">துளிகள்</string>
+    <string name="card_title">அறிவுரை அட்டை</string>
+    <string name="card_none_selected">நோயாளிக்குக் கொடுக்க வேண்டிய அட்டையைத் தேர்வு செய்யவும்</string>
+    <string name="card_send">அட்டையை WhatsApp-ல் அனுப்பவும்</string>
+
+    <!-- Registration extras -->
+    <string name="form_queue_after_save">சேமித்த பின் மருத்துவர் வரிசையில் சேர்க்கவும்</string>
+    <string name="form_duplicate_found">%1$s ஏற்கனவே இந்த எண்ணைப் பயன்படுத்துகிறார்</string>
+    <string name="form_duplicate_open">அந்த நோயாளியைத் திறக்கவும்</string>
+    <string name="form_save_and_queue">சேமித்து வரிசையில் சேர்க்கவும்</string>
+
+    <!-- Common state -->
+    <string name="common_retry">மீண்டும் முயற்சிக்கவும்</string>
+    <string name="common_loading">ஏற்றுகிறது…</string>
+    <string name="common_complete_visit">வருகையை முடிக்கவும்</string>
+    <string name="common_save_draft">சேமிக்கவும்</string>
+    <string name="common_book_appointment">சந்திப்பு பதிவு</string>
+
     <!-- Navigation -->
     <string name="nav_today">இன்று</string>
     <string name="nav_recall">நினைவூட்டல்</string>
@@ -140,6 +193,14 @@
     <string name="settings_template_tamil">தமிழ்</string>
     <string name="settings_placeholders">பயன்படுத்தக்கூடியவை: %1$s</string>
     <string name="settings_saved">சேமிக்கப்பட்டது</string>
+    <string name="settings_app_language">செயலி மொழி</string>
+    <string name="settings_app_language_hint">உங்கள் திரைகளை மட்டும் மாற்றும். நோயாளிகளுக்கு அவர்களின் மொழியிலேயே செய்தி செல்லும்.</string>
+    <string name="settings_cards">அறிவுரை அட்டைகள்</string>
+    <string name="message_appointment_confirmation">சந்திப்பு உறுதிப்படுத்தல்</string>
+    <string name="message_appointment_reminder">சந்திப்பு நினைவூட்டல்</string>
+    <string name="message_dispatched">மருந்து அனுப்பப்பட்டது</string>
+    <string name="message_review">கருத்து கோரிக்கை</string>
+    <string name="visit_recorded_in_myopd">இடம்பெயர்வுக்கு முன் MyOPD-ல் பதிவு</string>
 
     <!-- Common -->
     <string name="common_male">ஆண்</string>
@@ -158,5 +219,10 @@
     <plurals name="visit_count">
         <item quantity="one">%d வருகை</item>
         <item quantity="other">%d வருகைகள்</item>
+    </plurals>
+
+    <plurals name="overdue_banner">
+        <item quantity="one">%d நோயாளி நினைவூட்டல் தாமதம்</item>
+        <item quantity="other">%d நோயாளிகள் நினைவூட்டல் தாமதம்</item>
     </plurals>
 </resources>

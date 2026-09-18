@@ -34,7 +34,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.rajashomoeocare.clinic.R
-import com.rajashomoeocare.clinic.data.local.Language
+import com.rajashomoeocare.clinic.domain.Language
 import com.rajashomoeocare.clinic.util.formatPhone
 import com.rajashomoeocare.clinic.util.openWhatsApp
 

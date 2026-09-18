@@ -13,6 +13,59 @@
     <string name="lock_biometric_title">Unlock Rajas Homoeo Care</string>
     <string name="lock_biometric_subtitle">Confirm your fingerprint to continue</string>
 
+    <!-- Login -->
+    <string name="login_title">Sign in to continue</string>
+    <string name="login_username">Username</string>
+    <string name="login_password">Password</string>
+    <string name="login_sign_in">Sign in</string>
+    <string name="login_hint">Ask the doctor if you need an account.</string>
+    <string name="login_sign_out">Sign out</string>
+    <string name="signed_in_as">Signed in as %1$s · %2$s</string>
+
+    <!-- Waiting queue -->
+    <string name="queue_title">Waiting</string>
+    <string name="queue_empty">Nobody is waiting.</string>
+    <string name="queue_see_patient">See patient</string>
+    <string name="queue_in_consultation">In consultation</string>
+    <string name="queue_waiting">Waiting</string>
+    <string name="queue_booked">Booked today</string>
+
+    <!-- Vitals -->
+    <string name="vitals_title">Vitals</string>
+    <string name="vitals_height">Height (cm)</string>
+    <string name="vitals_weight">Weight (kg)</string>
+    <string name="vitals_bp">Blood pressure</string>
+    <string name="vitals_systolic">Systolic</string>
+    <string name="vitals_diastolic">Diastolic</string>
+    <string name="vitals_pulse">Pulse (optional)</string>
+    <string name="vitals_none">No vitals recorded.</string>
+    <string name="vitals_recorded_at_desk">Recorded at the front desk</string>
+
+    <!-- Medicines and cards -->
+    <string name="medicines_title">Medicines</string>
+    <string name="medicine_name">Medicine</string>
+    <string name="medicine_potency">Potency</string>
+    <string name="medicine_add">Add medicine</string>
+    <string name="medicine_remove">Remove</string>
+    <string name="medicine_pills">Pills</string>
+    <string name="medicine_drops">Drops</string>
+    <string name="card_title">Instruction card</string>
+    <string name="card_none_selected">Choose the card to give the patient</string>
+    <string name="card_send">Send card on WhatsApp</string>
+
+    <!-- Registration extras -->
+    <string name="form_queue_after_save">Send to the doctor\'s queue after saving</string>
+    <string name="form_duplicate_found">%1$s already uses this number</string>
+    <string name="form_duplicate_open">Open that patient</string>
+    <string name="form_save_and_queue">Save and add to queue</string>
+
+    <!-- Common state -->
+    <string name="common_retry">Retry</string>
+    <string name="common_loading">Loading…</string>
+    <string name="common_complete_visit">Complete visit</string>
+    <string name="common_save_draft">Save</string>
+    <string name="common_book_appointment">Book appointment</string>
+
     <!-- Navigation -->
     <string name="nav_today">Today</string>
     <string name="nav_recall">Recall</string>
@@ -144,6 +197,14 @@
     <string name="settings_template_tamil">Tamil</string>
     <string name="settings_placeholders">Available placeholders: %1$s</string>
     <string name="settings_saved">Saved</string>
+    <string name="settings_app_language">App language</string>
+    <string name="settings_app_language_hint">Changes only your screens. Patients still get messages in their own language.</string>
+    <string name="settings_cards">Instruction cards</string>
+    <string name="message_appointment_confirmation">Appointment confirmation</string>
+    <string name="message_appointment_reminder">Appointment reminder</string>
+    <string name="message_dispatched">Medicine dispatched</string>
+    <string name="message_review">Review request</string>
+    <string name="visit_recorded_in_myopd">Recorded in MyOPD before migration</string>
 
     <!-- Common -->
     <string name="common_male">Male</string>
@@ -163,5 +224,10 @@
     <plurals name="visit_count">
         <item quantity="one">%d visit</item>
         <item quantity="other">%d visits</item>
+    </plurals>
+
+    <plurals name="overdue_banner">
+        <item quantity="one">%d patient is overdue for recall</item>
+        <item quantity="other">%d patients are overdue for recall</item>
     </plurals>
 </resources>

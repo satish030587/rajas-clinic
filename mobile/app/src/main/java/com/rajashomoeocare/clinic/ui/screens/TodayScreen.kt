@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.CurrencyRupee
 import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,7 +34,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,14 +43,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rajashomoeocare.clinic.R
+import com.rajashomoeocare.clinic.data.UserRole
 import com.rajashomoeocare.clinic.domain.RecallItem
+import com.rajashomoeocare.clinic.domain.TemplateKey
+import com.rajashomoeocare.clinic.domain.VisitStatus
 import com.rajashomoeocare.clinic.domain.displayDate
 import com.rajashomoeocare.clinic.ui.components.EmptyState
+import com.rajashomoeocare.clinic.ui.components.ErrorBanner
 import com.rajashomoeocare.clinic.ui.components.PatientCard
 import com.rajashomoeocare.clinic.ui.components.PendingMessage
 import com.rajashomoeocare.clinic.ui.components.SectionHeader
@@ -64,7 +69,9 @@ import java.time.LocalDate
 @Composable
 fun TodayScreen(
     viewModel: HomeViewModel,
+    role: UserRole,
     onPatientClick: (String) -> Unit,
+    onOpenVisit: (String) -> Unit,
     onAddPatient: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -110,13 +117,19 @@ fun TodayScreen(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            state.error?.let { message ->
+                item {
+                    ErrorBanner(message = message, onRetry = viewModel::refresh)
+                }
+            }
+
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     StatTile(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Outlined.EventAvailable,
                         label = stringResource(R.string.today_due_today),
-                        value = state.dueToday.size.toString(),
+                        value = state.summary.dueToday.size.toString(),
                         container = recall.dueToday,
                         content = recall.onDueToday,
                     )
@@ -124,34 +137,82 @@ fun TodayScreen(
                         modifier = Modifier.weight(1f),
                         icon = Icons.Outlined.CheckCircle,
                         label = stringResource(R.string.today_seen_today),
-                        value = state.seenToday.size.toString(),
+                        value = state.summary.seenToday.size.toString(),
                         container = recall.settled,
                         content = recall.onSettled,
                     )
                 }
             }
 
+            // Fees are doctor-only (spec §6), so reception never sees the total.
+            if (role == UserRole.DOCTOR) {
+                item {
+                    CollectionTile(
+                        collected = state.summary.collection,
+                        outstanding = state.summary.outstanding,
+                    )
+                }
+            }
+
+            // The waiting room — what the doctor's day actually runs on.
             item {
-                CollectionTile(
-                    collected = state.collection,
-                    outstanding = state.outstanding,
+                SectionHeader(
+                    text = stringResource(R.string.queue_title),
+                    trailing = state.queue.size.toString(),
                 )
+            }
+            if (state.queue.isEmpty()) {
+                item {
+                    EmptyState(
+                        icon = Icons.Outlined.EventAvailable,
+                        title = stringResource(R.string.queue_empty),
+                    )
+                }
+            } else {
+                items(state.queue, key = { it.id }) { visit ->
+                    val patient = state.queueNames[visit.patientId]
+                    if (patient != null) {
+                        PatientCard(
+                            patient = patient,
+                            onClick = { onPatientClick(patient.id) },
+                            subtitle = buildString {
+                                append(
+                                    if (visit.status == VisitStatus.IN_CONSULTATION) {
+                                        stringResourceOf(R.string.queue_in_consultation)
+                                    } else {
+                                        stringResourceOf(R.string.queue_waiting)
+                                    }
+                                )
+                                visit.vitals?.bloodPressure?.let { append(" · BP $it") }
+                                visit.vitals?.weightKg?.let { append(" · ${it}kg") }
+                            },
+                            trailing = {
+                                if (role == UserRole.DOCTOR) {
+                                    Button(
+                                        onClick = { onOpenVisit(visit.id) },
+                                        contentPadding = PaddingValues(horizontal = 14.dp),
+                                    ) {
+                                        Text(stringResource(R.string.queue_see_patient))
+                                    }
+                                }
+                            },
+                        )
+                    }
+                }
             }
 
             if (state.overdueCount > 0) {
-                item {
-                    OverdueBanner(count = state.overdueCount)
-                }
+                item { OverdueBanner(count = state.overdueCount) }
             }
 
             item {
                 SectionHeader(
                     text = stringResource(R.string.today_due_today),
-                    trailing = state.dueToday.size.toString(),
+                    trailing = state.summary.dueToday.size.toString(),
                 )
             }
 
-            if (state.dueToday.isEmpty()) {
+            if (state.summary.dueToday.isEmpty()) {
                 item {
                     EmptyState(
                         icon = Icons.Outlined.EventAvailable,
@@ -159,7 +220,7 @@ fun TodayScreen(
                     )
                 }
             } else {
-                items(state.dueToday, key = { it.patient.id }) { item ->
+                items(state.summary.dueToday, key = { it.patient.id }) { item ->
                     PatientCard(
                         patient = item.patient,
                         onClick = { onPatientClick(item.patient.id) },
@@ -167,9 +228,11 @@ fun TodayScreen(
                         statusContainer = recall.dueToday,
                         statusContent = recall.onDueToday,
                         trailing = {
-                            SendReminderButton {
-                                scope.launch {
-                                    viewModel.recallMessage(item)?.let { body ->
+                            FilledTonalIconButton(
+                                onClick = {
+                                    viewModel.message(
+                                        TemplateKey.RECALL, item.patient, item.dueDate,
+                                    )?.let { body ->
                                         pending = item to PendingMessage(
                                             patientName = item.patient.name,
                                             phone = item.patient.phone,
@@ -178,25 +241,32 @@ fun TodayScreen(
                                             title = recallTitle,
                                         )
                                     }
-                                }
+                                },
+                                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                ),
+                            ) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.Send,
+                                    contentDescription = stringResource(R.string.recall_send),
+                                    modifier = Modifier.size(18.dp),
+                                )
                             }
                         },
                     )
                 }
             }
 
-            if (state.seenToday.isNotEmpty()) {
+            if (state.summary.seenToday.isNotEmpty()) {
                 item {
                     SectionHeader(
                         text = stringResource(R.string.today_seen_today),
-                        trailing = state.seenToday.size.toString(),
+                        trailing = state.summary.seenToday.size.toString(),
                     )
                 }
-                items(state.seenToday, key = { "seen-${it.id}" }) { patient ->
-                    PatientCard(
-                        patient = patient,
-                        onClick = { onPatientClick(patient.id) },
-                    )
+                items(state.summary.seenToday, key = { "seen-${it.id}" }) { patient ->
+                    PatientCard(patient = patient, onClick = { onPatientClick(patient.id) })
                 }
             }
         }
@@ -208,7 +278,7 @@ fun TodayScreen(
             onDismiss = { pending = null },
             onSent = {
                 scope.launch {
-                    viewModel.markRecallSent(item)
+                    viewModel.markSent(item, TemplateKey.RECALL)
                     pending = null
                 }
             },
@@ -217,21 +287,7 @@ fun TodayScreen(
 }
 
 @Composable
-private fun SendReminderButton(onClick: () -> Unit) {
-    FilledTonalIconButton(
-        onClick = onClick,
-        colors = IconButtonDefaults.filledTonalIconButtonColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        ),
-    ) {
-        Icon(
-            Icons.AutoMirrored.Filled.Send,
-            contentDescription = stringResource(R.string.recall_send),
-            modifier = Modifier.size(18.dp),
-        )
-    }
-}
+private fun stringResourceOf(id: Int): String = stringResource(id)
 
 @Composable
 private fun StatTile(
@@ -338,7 +394,7 @@ private fun OverdueBanner(count: Int) {
             )
             Spacer(Modifier.width(12.dp))
             Text(
-                text = stringResource(R.string.recall_overdue_banner, count),
+                text = pluralStringResource(R.plurals.overdue_banner, count, count),
                 style = MaterialTheme.typography.bodyMedium,
                 color = recall.onOverdueSoon,
                 fontWeight = FontWeight.Medium,

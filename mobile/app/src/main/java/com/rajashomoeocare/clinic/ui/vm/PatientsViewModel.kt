@@ -3,28 +3,53 @@ package com.rajashomoeocare.clinic.ui.vm
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rajashomoeocare.clinic.data.ClinicRepository
-import com.rajashomoeocare.clinic.data.local.PatientRow
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import com.rajashomoeocare.clinic.domain.PatientRow
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalCoroutinesApi::class, kotlinx.coroutines.FlowPreview::class)
-class PatientsViewModel(repo: ClinicRepository) : ViewModel() {
+data class PatientsState(
+    val query: String = "",
+    val patients: List<PatientRow> = emptyList(),
+    val loading: Boolean = true,
+    val error: String? = null,
+)
 
-    private val _query = MutableStateFlow("")
-    val query: StateFlow<String> = _query.asStateFlow()
+@OptIn(FlowPreview::class)
+class PatientsViewModel(private val repo: ClinicRepository) : ViewModel() {
 
-    val patients: StateFlow<List<PatientRow>> = _query
-        .debounce { if (it.isEmpty()) 0 else 180 }
-        .flatMapLatest { repo.patients.search(it.trim()) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    private val _state = MutableStateFlow(PatientsState())
+    val state: StateFlow<PatientsState> = _state.asStateFlow()
+
+    private val queryFlow = MutableStateFlow("")
+
+    init {
+        load("")
+        viewModelScope.launch {
+            queryFlow.drop(1).debounce(250).collect { load(it) }
+        }
+    }
 
     fun onQueryChange(value: String) {
-        _query.value = value
+        _state.update { it.copy(query = value) }
+        queryFlow.value = value
+    }
+
+    fun refresh() = load(_state.value.query)
+
+    private fun load(query: String) = viewModelScope.launch {
+        _state.update { it.copy(loading = true) }
+        repo.patients(query)
+            .onSuccess { rows ->
+                _state.update { it.copy(patients = rows, loading = false, error = null) }
+            }
+            .onFailure { e ->
+                _state.update { it.copy(loading = false, error = e.message) }
+            }
     }
 }

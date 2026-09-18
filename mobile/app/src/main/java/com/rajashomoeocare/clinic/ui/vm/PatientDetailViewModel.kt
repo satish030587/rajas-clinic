@@ -3,26 +3,31 @@ package com.rajashomoeocare.clinic.ui.vm
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rajashomoeocare.clinic.data.ClinicRepository
-import com.rajashomoeocare.clinic.data.local.MessageLogEntity
-import com.rajashomoeocare.clinic.data.local.PatientEntity
-import com.rajashomoeocare.clinic.data.local.PhotoEntity
-import com.rajashomoeocare.clinic.data.local.TemplateKey
-import com.rajashomoeocare.clinic.data.local.VisitWithBilling
+import com.rajashomoeocare.clinic.data.remote.ClinicProfileDto
+import com.rajashomoeocare.clinic.domain.Card
+import com.rajashomoeocare.clinic.domain.Language
+import com.rajashomoeocare.clinic.domain.Patient
+import com.rajashomoeocare.clinic.domain.TemplateKey
+import com.rajashomoeocare.clinic.domain.Visit
 import com.rajashomoeocare.clinic.domain.renderTemplate
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 data class PatientDetailState(
-    val patient: PatientEntity? = null,
-    val visits: List<VisitWithBilling> = emptyList(),
-    val photos: List<PhotoEntity> = emptyList(),
-    val messages: List<MessageLogEntity> = emptyList(),
+    val patient: Patient? = null,
+    val visits: List<Visit> = emptyList(),
+    val cards: List<Card> = emptyList(),
+    val clinic: ClinicProfileDto? = null,
+    val loading: Boolean = true,
+    val error: String? = null,
+    val notice: String? = null,
 ) {
-    val nextDue get() = visits.firstOrNull()?.nextVisitDue
-    val totalBilled get() = visits.sumOf { (it.consultationFee ?: 0) + (it.medicineCharge ?: 0) }
+    val nextDue: LocalDate? get() = visits.firstOrNull()?.nextVisitDue
+    fun card(id: String?) = cards.firstOrNull { it.id == id }
 }
 
 class PatientDetailViewModel(
@@ -30,32 +35,69 @@ class PatientDetailViewModel(
     private val patientId: String,
 ) : ViewModel() {
 
-    val state: StateFlow<PatientDetailState> = combine(
-        repo.patients.observe(patientId),
-        repo.visits.observeForPatient(patientId),
-        repo.photos.observeForPatient(patientId),
-        repo.messageLog.observeForPatient(patientId),
-    ) { patient, visits, photos, messages ->
-        PatientDetailState(patient, visits, photos, messages)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PatientDetailState())
+    private val _state = MutableStateFlow(PatientDetailState())
+    val state: StateFlow<PatientDetailState> = _state.asStateFlow()
 
-    suspend fun message(key: TemplateKey): String? {
-        val patient = state.value.patient ?: return null
-        val template = repo.template(key, patient.preferredLanguage) ?: return null
+    private var templates: Map<Pair<TemplateKey, Language>, String> = emptyMap()
+
+    init {
+        refresh()
+    }
+
+    fun refresh() = viewModelScope.launch {
+        _state.update { it.copy(loading = true) }
+
+        repo.patient(patientId)
+            .onSuccess { p -> _state.update { it.copy(patient = p, error = null) } }
+            .onFailure { e -> _state.update { it.copy(error = e.message) } }
+
+        repo.visitsForPatient(patientId).onSuccess { visits ->
+            _state.update { it.copy(visits = visits) }
+        }
+        repo.cards().onSuccess { cards -> _state.update { it.copy(cards = cards) } }
+        repo.clinic().onSuccess { c -> _state.update { it.copy(clinic = c) } }
+        if (templates.isEmpty()) repo.templates().onSuccess { templates = it }
+
+        _state.update { it.copy(loading = false) }
+    }
+
+    fun startVisit(onQueued: (String) -> Unit) = viewModelScope.launch {
+        repo.startVisit(patientId, null)
+            .onSuccess { onQueued(it.id) }
+            .onFailure { e -> _state.update { it.copy(error = e.message) } }
+    }
+
+    fun message(key: TemplateKey, appointmentDate: LocalDate? = null): String? {
+        val patient = _state.value.patient ?: return null
+        val body = templates[key to patient.preferredLanguage]
+            ?: templates[key to Language.EN]
+            ?: return null
         return renderTemplate(
-            body = template.bodyText,
+            body = body,
             patientName = patient.name,
-            dueDate = state.value.nextDue,
-            lastVisit = state.value.visits.firstOrNull()?.visitDate,
+            clinic = _state.value.clinic,
+            dueDate = _state.value.nextDue,
+            lastVisit = _state.value.visits.firstOrNull()?.visitDate,
+            appointmentDate = appointmentDate,
         )
     }
 
-    suspend fun markSent(key: TemplateKey) {
-        val patient = state.value.patient ?: return
-        repo.recordMessageSent(patient.id, key, patient.preferredLanguage)
+    /** The card's own text, for sending to the patient (spec §4.4). */
+    fun cardMessage(cardId: String?): String? {
+        val patient = _state.value.patient ?: return null
+        return _state.value.card(cardId)?.body(patient.preferredLanguage)
     }
 
-    fun archive() = viewModelScope.launch {
-        repo.patients.archive(patientId)
+    fun markSent(key: TemplateKey) = viewModelScope.launch {
+        val patient = _state.value.patient ?: return@launch
+        repo.logMessage(patient.id, key, patient.preferredLanguage)
     }
+
+    fun bookAppointment(date: LocalDate) = viewModelScope.launch {
+        repo.bookAppointment(patientId, date)
+            .onSuccess { _state.update { s -> s.copy(notice = "Appointment booked") } }
+            .onFailure { e -> _state.update { it.copy(error = e.message) } }
+    }
+
+    fun clearNotice() = _state.update { it.copy(notice = null, error = null) }
 }

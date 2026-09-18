@@ -30,9 +30,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.rajashomoeocare.clinic.R
-import com.rajashomoeocare.clinic.data.local.PatientRow
-import com.rajashomoeocare.clinic.data.local.Sex
-import com.rajashomoeocare.clinic.domain.age
+import com.rajashomoeocare.clinic.domain.PatientRow
+import com.rajashomoeocare.clinic.domain.Sex
 import com.rajashomoeocare.clinic.domain.shortDate
 import com.rajashomoeocare.clinic.util.formatPhone
 
@@ -44,6 +43,7 @@ fun PatientCard(
     statusText: String? = null,
     statusContainer: Color? = null,
     statusContent: Color? = null,
+    subtitle: String? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     Card(
@@ -96,28 +96,41 @@ fun PatientCard(
                     )
                 }
 
-                if (statusText != null && statusContainer != null && statusContent != null) {
-                    Spacer(Modifier.height(8.dp))
-                    StatusPill(
-                        text = statusText,
-                        container = statusContainer,
-                        content = statusContent,
-                        icon = Icons.Outlined.CalendarMonth,
-                    )
-                } else if (patient.lastVisitDate != null) {
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = stringResource(
-                            R.string.common_last_seen,
-                            patient.lastVisitDate.shortDate(),
-                        ) + " · " + pluralStringResource(
-                            R.plurals.visit_count,
-                            patient.visitCount,
-                            patient.visitCount,
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.outline,
-                    )
+                when {
+                    statusText != null && statusContainer != null && statusContent != null -> {
+                        Spacer(Modifier.height(8.dp))
+                        StatusPill(
+                            text = statusText,
+                            container = statusContainer,
+                            content = statusContent,
+                            icon = Icons.Outlined.CalendarMonth,
+                        )
+                    }
+
+                    subtitle != null -> {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outline,
+                        )
+                    }
+
+                    patient.lastVisitDate != null -> {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(
+                                R.string.common_last_seen,
+                                patient.lastVisitDate.shortDate(),
+                            ) + " · " + pluralStringResource(
+                                R.plurals.visit_count,
+                                patient.visitCount,
+                                patient.visitCount,
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outline,
+                        )
+                    }
                 }
             }
 

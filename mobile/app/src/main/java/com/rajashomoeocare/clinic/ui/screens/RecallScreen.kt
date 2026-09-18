@@ -33,7 +33,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rajashomoeocare.clinic.R
 import com.rajashomoeocare.clinic.domain.RecallBucket
 import com.rajashomoeocare.clinic.domain.RecallItem
+import com.rajashomoeocare.clinic.domain.TemplateKey
 import com.rajashomoeocare.clinic.ui.components.EmptyState
+import com.rajashomoeocare.clinic.ui.components.ErrorBanner
 import com.rajashomoeocare.clinic.ui.components.PatientCard
 import com.rajashomoeocare.clinic.ui.components.PendingMessage
 import com.rajashomoeocare.clinic.ui.components.SectionHeader
@@ -72,17 +74,6 @@ fun RecallScreen(
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
-        if (state.overdueCount == 0) {
-            EmptyState(
-                icon = Icons.Outlined.NotificationsActive,
-                title = stringResource(R.string.recall_empty),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-            )
-            return@Scaffold
-        }
-
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -90,8 +81,21 @@ fun RecallScreen(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            state.error?.let { message ->
+                item { ErrorBanner(message = message, onRetry = viewModel::refresh) }
+            }
+
+            if (state.overdueCount == 0 && state.error == null) {
+                item {
+                    EmptyState(
+                        icon = Icons.Outlined.NotificationsActive,
+                        title = stringResource(R.string.recall_empty),
+                    )
+                }
+            }
+
             buckets.forEach { (bucket, labelRes) ->
-                val entries = state.overdue[bucket].orEmpty()
+                val entries = state.overdueBy(bucket)
                 if (entries.isEmpty()) return@forEach
 
                 item(key = "header-$bucket") {
@@ -106,28 +110,23 @@ fun RecallScreen(
                         patient = item.patient,
                         onClick = { onPatientClick(item.patient.id) },
                         statusText = stringResource(
-                            R.string.recall_days_overdue,
-                            item.daysOverdue,
+                            R.string.recall_days_overdue, item.daysOverdue,
                         ),
                         statusContainer = if (severe) recall.overdueLong else recall.overdueSoon,
-                        statusContent = if (severe) {
-                            recall.onOverdueLong
-                        } else {
-                            recall.onOverdueSoon
-                        },
+                        statusContent = if (severe) recall.onOverdueLong else recall.onOverdueSoon,
                         trailing = {
                             FilledTonalButton(
                                 onClick = {
-                                    scope.launch {
-                                        viewModel.recallMessage(item)?.let { body ->
-                                            pending = item to PendingMessage(
-                                                patientName = item.patient.name,
-                                                phone = item.patient.phone,
-                                                language = item.patient.preferredLanguage,
-                                                body = body,
-                                                title = recallTitle,
-                                            )
-                                        }
+                                    viewModel.message(
+                                        TemplateKey.RECALL, item.patient, item.dueDate,
+                                    )?.let { body ->
+                                        pending = item to PendingMessage(
+                                            patientName = item.patient.name,
+                                            phone = item.patient.phone,
+                                            language = item.patient.preferredLanguage,
+                                            body = body,
+                                            title = recallTitle,
+                                        )
                                     }
                                 },
                                 contentPadding = PaddingValues(horizontal = 14.dp),
@@ -153,7 +152,7 @@ fun RecallScreen(
             onDismiss = { pending = null },
             onSent = {
                 scope.launch {
-                    viewModel.markRecallSent(item)
+                    viewModel.markSent(item, TemplateKey.RECALL)
                     pending = null
                 }
             },

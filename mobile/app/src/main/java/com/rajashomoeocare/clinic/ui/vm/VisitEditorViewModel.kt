@@ -3,147 +3,150 @@ package com.rajashomoeocare.clinic.ui.vm
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rajashomoeocare.clinic.data.ClinicRepository
-import com.rajashomoeocare.clinic.data.SettingsStore
-import com.rajashomoeocare.clinic.data.local.InvoiceEntity
-import com.rajashomoeocare.clinic.data.local.PatientEntity
-import com.rajashomoeocare.clinic.data.local.PaymentMode
-import com.rajashomoeocare.clinic.data.local.PhotoEntity
-import com.rajashomoeocare.clinic.data.local.VisitEntity
-import com.rajashomoeocare.clinic.data.local.newId
-import com.rajashomoeocare.clinic.util.deletePhotoFile
+import com.rajashomoeocare.clinic.domain.Billing
+import com.rajashomoeocare.clinic.domain.Card
+import com.rajashomoeocare.clinic.domain.Medicine
+import com.rajashomoeocare.clinic.domain.MedicineForm
+import com.rajashomoeocare.clinic.domain.Patient
+import com.rajashomoeocare.clinic.domain.PaymentMode
+import com.rajashomoeocare.clinic.domain.Visit
+import com.rajashomoeocare.clinic.domain.Vitals
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.Instant
 import java.time.LocalDate
 
-data class VisitFormState(
-    val visitId: String = newId(),
-    val patient: PatientEntity? = null,
-    val visitDate: LocalDate = LocalDate.now(),
-    val complaint: String = "",
-    val remedy: String = "",
+data class MedicineDraft(
+    val name: String = "",
     val potency: String = "",
-    val advice: String = "",
+    val form: MedicineForm = MedicineForm.PILLS,
+    val quantity: String = "",
+) {
+    val isBlank: Boolean get() = name.isBlank()
+    fun toMedicine() = Medicine(
+        name = name.trim(),
+        potency = potency.takeIf(String::isNotBlank),
+        form = form,
+        quantity = quantity.takeIf(String::isNotBlank),
+    )
+}
+
+data class VisitEditorState(
+    val visit: Visit? = null,
+    val patient: Patient? = null,
+    val vitals: Vitals? = null,
+    val complaint: String = "",
+    val medicines: List<MedicineDraft> = listOf(MedicineDraft()),
+    val cards: List<Card> = emptyList(),
+    val selectedCardId: String? = null,
     val nextVisitDue: LocalDate? = LocalDate.now().plusDays(15),
     val consultationFee: String = "",
     val medicineCharge: String = "",
     val paymentMode: PaymentMode = PaymentMode.CASH,
     val paid: Boolean = true,
-    /** Photos already persisted against this visit (edit mode only). */
-    val photos: List<PhotoEntity> = emptyList(),
-    /** Photos taken in this session, written only when the visit is saved. */
-    val pendingPhotos: List<String> = emptyList(),
-    val priorPhotos: List<PhotoEntity> = emptyList(),
-    val isNew: Boolean = true,
+    val loading: Boolean = true,
     val saving: Boolean = false,
+    val error: String? = null,
 ) {
     val total: Int
         get() = (consultationFee.toIntOrNull() ?: 0) + (medicineCharge.toIntOrNull() ?: 0)
+
+    val selectedCard: Card? get() = cards.firstOrNull { it.id == selectedCardId }
 }
 
 class VisitEditorViewModel(
     private val repo: ClinicRepository,
-    private val settings: SettingsStore,
-    private val patientId: String,
-    private val existingVisitId: String?,
+    private val visitId: String,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(VisitFormState())
-    val state: StateFlow<VisitFormState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(VisitEditorState())
+    val state: StateFlow<VisitEditorState> = _state.asStateFlow()
 
     init {
         viewModelScope.launch {
-            val patient = repo.patients.get(patientId)
-            val priorPhotos = repo.photos.observeForPatient(patientId).first()
+            // Opening the visit moves it out of the waiting queue.
+            val visit = repo.openVisit(visitId).getOrElse { e ->
+                _state.update { it.copy(loading = false, error = e.message) }
+                return@launch
+            }
 
-            if (existingVisitId != null) {
-                val visit = repo.visits.get(existingVisitId)
-                val invoice = repo.invoices.forVisit(existingVisitId)
-                val photos = repo.photos.observeForVisit(existingVisitId).first()
-                if (visit != null) {
-                    _state.value = VisitFormState(
-                        visitId = visit.id,
-                        patient = patient,
-                        visitDate = visit.visitDate,
-                        complaint = visit.complaint.orEmpty(),
-                        remedy = visit.remedyGiven.orEmpty(),
-                        potency = visit.potency.orEmpty(),
-                        advice = visit.adviceGiven.orEmpty(),
-                        nextVisitDue = visit.nextVisitDue,
-                        consultationFee = invoice?.consultationFee?.toString().orEmpty(),
-                        medicineCharge = invoice?.medicineCharge?.toString().orEmpty(),
-                        paymentMode = invoice?.paymentMode ?: PaymentMode.CASH,
-                        paid = invoice?.paid ?: true,
-                        photos = photos,
-                        priorPhotos = priorPhotos.filterNot { it.visitId == visit.id },
-                        isNew = false,
-                    )
-                    return@launch
-                }
+            val cards = repo.cards().getOrDefault(emptyList())
+            val patient = repo.patient(visit.patientId).getOrNull()
+            val defaultFee = repo.clinic().getOrNull()?.defaultConsultationFee ?: 200
+
+            val existing = visit.medicines.map {
+                MedicineDraft(
+                    name = it.name,
+                    potency = it.potency.orEmpty(),
+                    form = it.form,
+                    quantity = it.quantity.orEmpty(),
+                )
             }
 
             _state.update {
                 it.copy(
+                    visit = visit,
                     patient = patient,
-                    priorPhotos = priorPhotos,
-                    consultationFee = settings.defaultConsultationFee.first().toString(),
+                    vitals = visit.vitals,
+                    complaint = visit.complaint.orEmpty(),
+                    medicines = existing.ifEmpty { listOf(MedicineDraft()) },
+                    cards = cards,
+                    selectedCardId = visit.cardId,
+                    nextVisitDue = visit.nextVisitDue ?: LocalDate.now().plusDays(15),
+                    consultationFee = (visit.billing?.consultationFee ?: defaultFee).toString(),
+                    medicineCharge = visit.billing?.medicineCharge?.toString().orEmpty(),
+                    paymentMode = visit.billing?.paymentMode ?: PaymentMode.CASH,
+                    paid = visit.billing?.paid ?: true,
+                    loading = false,
                 )
             }
         }
     }
 
-    fun edit(transform: (VisitFormState) -> VisitFormState) {
-        _state.update(transform)
+    fun edit(transform: (VisitEditorState) -> VisitEditorState) =
+        _state.update { transform(it).copy(error = null) }
+
+    fun addMedicine() = _state.update { it.copy(medicines = it.medicines + MedicineDraft()) }
+
+    fun updateMedicine(index: Int, draft: MedicineDraft) = _state.update { s ->
+        s.copy(medicines = s.medicines.toMutableList().also { it[index] = draft })
     }
 
-    fun addPhoto(filePath: String) {
-        _state.update { it.copy(pendingPhotos = it.pendingPhotos + filePath) }
+    fun removeMedicine(index: Int) = _state.update { s ->
+        val next = s.medicines.toMutableList().also { it.removeAt(index) }
+        s.copy(medicines = next.ifEmpty { listOf(MedicineDraft()) })
     }
 
-    fun removePendingPhoto(filePath: String) {
-        deletePhotoFile(filePath)
-        _state.update { it.copy(pendingPhotos = it.pendingPhotos - filePath) }
-    }
-
-    fun removeSavedPhoto(photo: PhotoEntity) = viewModelScope.launch {
-        repo.photos.delete(photo)
-        deletePhotoFile(photo.filePath)
-        _state.update { it.copy(photos = it.photos - photo) }
-    }
-
-    suspend fun save(): Boolean {
+    suspend fun save(complete: Boolean): Boolean {
         val s = _state.value
-        _state.update { it.copy(saving = true) }
+        _state.update { it.copy(saving = true, error = null) }
 
-        val visit = VisitEntity(
-            id = s.visitId,
-            patientId = patientId,
-            visitDate = s.visitDate,
+        val result = repo.saveClinical(
+            visitId = visitId,
             complaint = s.complaint.takeIf(String::isNotBlank),
-            remedyGiven = s.remedy.takeIf(String::isNotBlank),
-            potency = s.potency.takeIf(String::isNotBlank),
-            adviceGiven = s.advice.takeIf(String::isNotBlank),
+            cardId = s.selectedCardId,
             nextVisitDue = s.nextVisitDue,
+            medicines = s.medicines.filterNot { it.isBlank }.map { it.toMedicine() },
+            billing = Billing(
+                consultationFee = s.consultationFee.toIntOrNull() ?: 0,
+                medicineCharge = s.medicineCharge.toIntOrNull() ?: 0,
+                paymentMode = s.paymentMode,
+                paid = s.paid,
+            ),
+            complete = complete,
         )
-        val invoice = InvoiceEntity(
-            visitId = s.visitId,
-            consultationFee = s.consultationFee.toIntOrNull() ?: 0,
-            medicineCharge = s.medicineCharge.toIntOrNull() ?: 0,
-            paymentMode = s.paymentMode,
-            paid = s.paid,
-            paidAt = if (s.paid) Instant.now() else null,
-        )
-        repo.saveVisit(visit, invoice, newPhotoPaths = s.pendingPhotos)
-        _state.update { it.copy(saving = false, pendingPhotos = emptyList()) }
-        return true
-    }
 
-    /** Photo files copied in but never saved would otherwise leak into storage. */
-    fun discardUnsaved() {
-        _state.value.pendingPhotos.forEach(::deletePhotoFile)
+        return result.fold(
+            onSuccess = {
+                _state.update { st -> st.copy(saving = false, visit = it) }
+                true
+            },
+            onFailure = { e ->
+                _state.update { it.copy(saving = false, error = e.message) }
+                false
+            },
+        )
     }
 }

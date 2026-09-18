@@ -1,7 +1,6 @@
 package com.rajashomoeocare.clinic.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,7 +16,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.automirrored.outlined.CompareArrows
 import androidx.compose.material.icons.automirrored.outlined.EventNote
 import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.Edit
@@ -49,11 +47,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rajashomoeocare.clinic.R
-import com.rajashomoeocare.clinic.data.local.TemplateKey
-import com.rajashomoeocare.clinic.data.local.VisitWithBilling
-import com.rajashomoeocare.clinic.domain.currentAge
+import com.rajashomoeocare.clinic.data.UserRole
+import com.rajashomoeocare.clinic.domain.TemplateKey
+import com.rajashomoeocare.clinic.domain.Visit
 import com.rajashomoeocare.clinic.domain.displayDate
 import com.rajashomoeocare.clinic.ui.components.EmptyState
+import com.rajashomoeocare.clinic.ui.components.ErrorBanner
 import com.rajashomoeocare.clinic.ui.components.PatientAvatar
 import com.rajashomoeocare.clinic.ui.components.PendingMessage
 import com.rajashomoeocare.clinic.ui.components.SectionCard
@@ -71,11 +70,10 @@ import java.time.LocalDate
 @Composable
 fun PatientDetailScreen(
     viewModel: PatientDetailViewModel,
+    role: UserRole,
     onBack: () -> Unit,
     onEdit: () -> Unit,
-    onNewVisit: () -> Unit,
-    onEditVisit: (String) -> Unit,
-    onCompare: () -> Unit,
+    onOpenVisit: (String) -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
@@ -113,15 +111,15 @@ fun PatientDetailScreen(
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = onNewVisit,
-                icon = { Icon(Icons.AutoMirrored.Outlined.EventNote, contentDescription = null) },
+                onClick = { viewModel.startVisit(onQueued = { onOpenVisit(it) }) },
+                icon = {
+                    Icon(Icons.AutoMirrored.Outlined.EventNote, contentDescription = null)
+                },
                 text = { Text(stringResource(R.string.detail_new_visit)) },
             )
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
-        if (patient == null) return@Scaffold
-
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -129,6 +127,12 @@ fun PatientDetailScreen(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            state.error?.let { message ->
+                item { ErrorBanner(message = message, onRetry = viewModel::refresh) }
+            }
+
+            if (patient == null) return@LazyColumn
+
             item {
                 SectionCard {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -141,15 +145,12 @@ fun PatientDetailScreen(
                             )
                             Text(
                                 text = buildString {
-                                    currentAge(
-                                        patient.dateOfBirth,
-                                        patient.ageYears,
-                                        patient.ageRecordedOn,
-                                    )?.let { append("$it yrs · ") }
+                                    patient.age?.let { append("$it yrs · ") }
                                     append(
                                         patient.sex.name.lowercase()
                                             .replaceFirstChar(Char::uppercase)
                                     )
+                                    patient.bloodGroup?.let { append(" · $it") }
                                 },
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -186,16 +187,14 @@ fun PatientDetailScreen(
                         )
                         AssistChip(
                             onClick = {
-                                scope.launch {
-                                    viewModel.message(TemplateKey.WELCOME)?.let { body ->
-                                        pending = TemplateKey.WELCOME to PendingMessage(
-                                            patientName = patient.name,
-                                            phone = patient.phone,
-                                            language = patient.preferredLanguage,
-                                            body = body,
-                                            title = welcomeTitle,
-                                        )
-                                    }
+                                viewModel.message(TemplateKey.WELCOME)?.let { body ->
+                                    pending = TemplateKey.WELCOME to PendingMessage(
+                                        patientName = patient.name,
+                                        phone = patient.phone,
+                                        language = patient.preferredLanguage,
+                                        body = body,
+                                        title = welcomeTitle,
+                                    )
                                 }
                             },
                             label = { Text(stringResource(R.string.message_welcome)) },
@@ -207,19 +206,6 @@ fun PatientDetailScreen(
                                 )
                             },
                         )
-                        if (state.photos.size > 1) {
-                            AssistChip(
-                                onClick = onCompare,
-                                label = { Text(stringResource(R.string.visit_compare)) },
-                                leadingIcon = {
-                                    Icon(
-                                        Icons.AutoMirrored.Outlined.CompareArrows,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                },
-                            )
-                        }
                     }
                 }
             }
@@ -227,7 +213,6 @@ fun PatientDetailScreen(
             val details = listOfNotNull(
                 patient.address?.let { R.string.form_address to it },
                 patient.occupation?.let { R.string.form_occupation to it },
-                patient.bloodGroup?.let { R.string.form_blood_group to it },
                 patient.referredBy?.let { R.string.form_referred_by to it },
                 patient.currentMedication?.let { R.string.form_current_medication to it },
             )
@@ -258,7 +243,12 @@ fun PatientDetailScreen(
                 }
             } else {
                 items(state.visits, key = { it.id }) { visit ->
-                    VisitCard(visit = visit, onClick = { onEditVisit(visit.id) })
+                    VisitCard(
+                        visit = visit,
+                        cardLabel = state.card(visit.cardId)
+                            ?.label(patient.preferredLanguage),
+                        showBilling = role == UserRole.DOCTOR,
+                    )
                 }
             }
         }
@@ -297,8 +287,7 @@ private fun DetailRow(label: String, value: String) {
 }
 
 @Composable
-private fun VisitCard(visit: VisitWithBilling, onClick: () -> Unit) {
-    val total = (visit.consultationFee ?: 0) + (visit.medicineCharge ?: 0)
+private fun VisitCard(visit: Visit, cardLabel: String?, showBilling: Boolean) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -306,7 +295,6 @@ private fun VisitCard(visit: VisitWithBilling, onClick: () -> Unit) {
             containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        onClick = onClick,
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -319,17 +307,28 @@ private fun VisitCard(visit: VisitWithBilling, onClick: () -> Unit) {
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                 )
-                if (total > 0) {
+                val total = visit.billing?.total ?: 0
+                if (showBilling && total > 0) {
                     Text(
                         text = "₹$total",
                         style = MaterialTheme.typography.titleMedium,
-                        color = if (visit.paid == false) {
+                        color = if (visit.billing?.paid == false) {
                             MaterialTheme.colorScheme.error
                         } else {
                             MaterialTheme.colorScheme.primary
                         },
                     )
                 }
+            }
+
+            // A migrated visit has no clinical detail here — it happened in MyOPD.
+            if (visit.migrated) {
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = stringResource(R.string.visit_recorded_in_myopd),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.outline,
+                )
             }
 
             visit.complaint?.let {
@@ -341,24 +340,36 @@ private fun VisitCard(visit: VisitWithBilling, onClick: () -> Unit) {
                 )
             }
 
-            if (visit.remedyGiven != null || visit.potency != null) {
+            if (visit.medicines.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        Icons.Outlined.Inventory2,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(15.dp),
-                    )
-                    Text(
-                        text = listOfNotNull(visit.remedyGiven, visit.potency).joinToString(" "),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                visit.medicines.forEach { medicine ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            Icons.Outlined.Inventory2,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(15.dp),
+                        )
+                        Text(
+                            text = listOfNotNull(medicine.name, medicine.potency)
+                                .joinToString(" "),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
+            }
+
+            cardLabel?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "${stringResource(R.string.card_title)}: $it",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
 
             visit.nextVisitDue?.let { due ->
@@ -369,16 +380,6 @@ private fun VisitCard(visit: VisitWithBilling, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.outline,
                 )
             }
-
-            if (visit.photoCount > 0) {
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    text = stringResource(R.string.detail_photo_count, visit.photoCount),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.outline,
-                )
-            }
         }
     }
 }
-
