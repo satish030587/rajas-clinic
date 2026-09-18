@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 
+# --- Uploaded patient files (scans, reports, photos) ---
+uploads/
+
 # --- Python ---
 venv/
 .venv/

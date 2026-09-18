@@ -44,3 +44,7 @@ class Patient(Base):
 
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     archived = Column(Boolean, nullable=False, default=False)
+
+    # Spec §4.11: MyOPD cannot export, so pre-existing patients are re-typed.
+    # Flagged so it stays clear their earlier history lives in MyOPD, not here.
+    migrated_from_myopd = Column(Boolean, nullable=False, default=False)
