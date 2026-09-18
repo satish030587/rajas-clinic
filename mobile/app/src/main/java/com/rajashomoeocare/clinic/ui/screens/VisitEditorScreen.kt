@@ -20,11 +20,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.MonitorHeart
-import androidx.compose.material.icons.outlined.QrCode2
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.MonitorHeart
+import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,6 +44,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -108,17 +109,17 @@ fun VisitEditorScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            Icons.AutoMirrored.Outlined.ArrowBack,
+                            Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.common_back),
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
+                    containerColor = Color.Transparent,
                 ),
             )
         },
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
     ) { padding ->
         if (state.loading) {
             Box(
@@ -169,7 +170,7 @@ fun VisitEditorScreen(
                 }
                 TextButton(onClick = viewModel::addMedicine) {
                     Icon(
-                        Icons.Outlined.Add,
+                        Icons.Filled.Add,
                         contentDescription = null,
                         modifier = Modifier.size(18.dp),
                     )
@@ -312,7 +313,7 @@ fun VisitEditorScreen(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Icon(
-                            Icons.Outlined.QrCode2,
+                            Icons.Filled.QrCode2,
                             contentDescription = null,
                             modifier = Modifier.size(18.dp),
                         )
@@ -374,7 +375,7 @@ private fun VitalsSummary(vitals: Vitals) {
     SectionCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                Icons.Outlined.MonitorHeart,
+                Icons.Filled.MonitorHeart,
                 contentDescription = null,
                 tint = recall.onDueToday,
                 modifier = Modifier.size(20.dp),
@@ -428,7 +429,7 @@ private fun MedicineRow(
             if (canRemove) {
                 IconButton(onClick = onRemove) {
                     Icon(
-                        Icons.Outlined.Close,
+                        Icons.Filled.Close,
                         contentDescription = stringResource(R.string.medicine_remove),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

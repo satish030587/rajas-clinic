@@ -14,7 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Female
 import androidx.compose.material.icons.filled.Male
-import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -103,7 +103,7 @@ fun PatientCard(
                             text = statusText,
                             container = statusContainer,
                             content = statusContent,
-                            icon = Icons.Outlined.CalendarMonth,
+                            icon = Icons.Filled.CalendarMonth,
                         )
                     }
 

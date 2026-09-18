@@ -10,11 +10,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Group
-import androidx.compose.material.icons.outlined.PersonAdd
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.SearchOff
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -54,18 +54,18 @@ fun PatientsScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.patients_title)) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
+                    containerColor = Color.Transparent,
                 ),
             )
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddPatient,
-                icon = { Icon(Icons.Outlined.PersonAdd, contentDescription = null) },
+                icon = { Icon(Icons.Filled.PersonAdd, contentDescription = null) },
                 text = { Text(stringResource(R.string.patients_add)) },
             )
         },
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -86,9 +86,9 @@ fun PatientsScreen(
                 item {
                     EmptyState(
                         icon = if (state.query.isBlank()) {
-                            Icons.Outlined.Group
+                            Icons.Filled.Group
                         } else {
-                            Icons.Outlined.SearchOff
+                            Icons.Filled.SearchOff
                         },
                         title = stringResource(
                             if (state.query.isBlank()) {
@@ -123,11 +123,11 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
         onValueChange = onQueryChange,
         modifier = Modifier.fillMaxWidth(),
         placeholder = { Text(stringResource(R.string.patients_search_hint)) },
-        leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
         trailingIcon = {
             if (query.isNotEmpty()) {
                 IconButton(onClick = { onQueryChange("") }) {
-                    Icon(Icons.Outlined.Close, contentDescription = null)
+                    Icon(Icons.Filled.Close, contentDescription = null)
                 }
             }
         },

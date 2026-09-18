@@ -11,7 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -68,11 +69,11 @@ fun RecallScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.recall_title)) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
+                    containerColor = Color.Transparent,
                 ),
             )
         },
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -88,7 +89,7 @@ fun RecallScreen(
             if (state.overdueCount == 0 && state.error == null) {
                 item {
                     EmptyState(
-                        icon = Icons.Outlined.NotificationsActive,
+                        icon = Icons.Filled.NotificationsActive,
                         title = stringResource(R.string.recall_empty),
                     )
                 }

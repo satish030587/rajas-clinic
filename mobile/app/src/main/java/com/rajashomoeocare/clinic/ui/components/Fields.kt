@@ -4,7 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -107,7 +107,7 @@ fun DateField(
         enabled = false,
         label = { Text(label) },
         supportingText = supporting?.let { { Text(it) } },
-        trailingIcon = { Icon(Icons.Outlined.CalendarMonth, contentDescription = null) },
+        trailingIcon = { Icon(Icons.Filled.CalendarMonth, contentDescription = null) },
         modifier = modifier
             .fillMaxWidth()
             .clickable { onShowDialogChange(true) },

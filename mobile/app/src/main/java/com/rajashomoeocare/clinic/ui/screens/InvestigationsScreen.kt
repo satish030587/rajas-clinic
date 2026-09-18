@@ -25,11 +25,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.AddAPhoto
-import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -54,6 +54,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -119,13 +120,13 @@ fun InvestigationsScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            Icons.AutoMirrored.Outlined.ArrowBack,
+                            Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.common_back),
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
+                    containerColor = Color.Transparent,
                 ),
             )
         },
@@ -135,11 +136,11 @@ fun InvestigationsScreen(
                     pages.clear()
                     viewModel.openForm()
                 },
-                icon = { Icon(Icons.Outlined.AddAPhoto, contentDescription = null) },
+                icon = { Icon(Icons.Filled.AddAPhoto, contentDescription = null) },
                 text = { Text(stringResource(R.string.investigations_add)) },
             )
         },
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -155,7 +156,7 @@ fun InvestigationsScreen(
             if (state.series.isEmpty() && !state.loading) {
                 item {
                     EmptyState(
-                        icon = Icons.Outlined.Description,
+                        icon = Icons.Filled.Description,
                         title = stringResource(R.string.investigations_empty),
                         subtitle = stringResource(R.string.investigations_empty_hint),
                     )
@@ -231,7 +232,7 @@ fun InvestigationsScreen(
                         label = { Text(stringResource(R.string.photo_take)) },
                         leadingIcon = {
                             Icon(
-                                Icons.Outlined.AddAPhoto,
+                                Icons.Filled.AddAPhoto,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp),
                             )
@@ -248,7 +249,7 @@ fun InvestigationsScreen(
                         label = { Text(stringResource(R.string.photo_choose)) },
                         leadingIcon = {
                             Icon(
-                                Icons.Outlined.PhotoLibrary,
+                                Icons.Filled.PhotoLibrary,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp),
                             )
@@ -278,7 +279,7 @@ fun InvestigationsScreen(
                                         .size(28.dp),
                                 ) {
                                     Icon(
-                                        Icons.Outlined.Close,
+                                        Icons.Filled.Close,
                                         contentDescription = null,
                                         modifier = Modifier.size(16.dp),
                                     )
@@ -376,7 +377,7 @@ private fun ReportThumb(entry: Investigation, fileUrl: (String) -> String) {
                     modifier = Modifier.fillMaxSize(),
                 )
             } else {
-                Icon(Icons.Outlined.Description, contentDescription = null)
+                Icon(Icons.Filled.Description, contentDescription = null)
             }
         }
         Spacer(Modifier.height(4.dp))
@@ -415,21 +416,21 @@ fun InvestigationCompareScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            Icons.AutoMirrored.Outlined.ArrowBack,
+                            Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.common_back),
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
+                    containerColor = Color.Transparent,
                 ),
             )
         },
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
     ) { padding ->
         if (entries.isEmpty()) {
             EmptyState(
-                icon = Icons.Outlined.Description,
+                icon = Icons.Filled.Description,
                 title = stringResource(R.string.investigations_empty),
                 modifier = Modifier
                     .fillMaxSize()

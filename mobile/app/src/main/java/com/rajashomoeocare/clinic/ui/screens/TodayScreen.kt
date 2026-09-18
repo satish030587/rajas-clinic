@@ -16,11 +16,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.CloudUpload
-import androidx.compose.material.icons.outlined.CurrencyRupee
-import androidx.compose.material.icons.outlined.EventAvailable
-import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CloudUpload
+import androidx.compose.material.icons.filled.CurrencyRupee
+import androidx.compose.material.icons.filled.EventAvailable
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -99,18 +99,18 @@ fun TodayScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
+                    containerColor = Color.Transparent,
                 ),
             )
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddPatient,
-                icon = { Icon(Icons.Outlined.PersonAdd, contentDescription = null) },
+                icon = { Icon(Icons.Filled.PersonAdd, contentDescription = null) },
                 text = { Text(stringResource(R.string.today_new_patient)) },
             )
         },
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -138,7 +138,7 @@ fun TodayScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     StatTile(
                         modifier = Modifier.weight(1f),
-                        icon = Icons.Outlined.EventAvailable,
+                        icon = Icons.Filled.EventAvailable,
                         label = stringResource(R.string.today_due_today),
                         value = state.summary.dueToday.size.toString(),
                         container = recall.dueToday,
@@ -146,7 +146,7 @@ fun TodayScreen(
                     )
                     StatTile(
                         modifier = Modifier.weight(1f),
-                        icon = Icons.Outlined.CheckCircle,
+                        icon = Icons.Filled.CheckCircle,
                         label = stringResource(R.string.today_seen_today),
                         value = state.summary.seenToday.size.toString(),
                         container = recall.settled,
@@ -175,7 +175,7 @@ fun TodayScreen(
             if (state.queue.isEmpty()) {
                 item {
                     EmptyState(
-                        icon = Icons.Outlined.EventAvailable,
+                        icon = Icons.Filled.EventAvailable,
                         title = stringResource(R.string.queue_empty),
                     )
                 }
@@ -226,7 +226,7 @@ fun TodayScreen(
             if (state.summary.dueToday.isEmpty()) {
                 item {
                     EmptyState(
-                        icon = Icons.Outlined.EventAvailable,
+                        icon = Icons.Filled.EventAvailable,
                         title = stringResource(R.string.today_empty),
                     )
                 }
@@ -315,7 +315,7 @@ private fun PendingSyncBanner(count: Int, onRetry: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                Icons.Outlined.CloudUpload,
+                Icons.Filled.CloudUpload,
                 contentDescription = null,
                 tint = recall.onOverdueSoon,
                 modifier = Modifier.size(20.dp),
@@ -385,7 +385,7 @@ private fun CollectionTile(collected: Int, outstanding: Int) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                Icons.Outlined.CurrencyRupee,
+                Icons.Filled.CurrencyRupee,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
             )
@@ -435,7 +435,7 @@ private fun OverdueBanner(count: Int) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                Icons.Outlined.EventAvailable,
+                Icons.Filled.EventAvailable,
                 contentDescription = null,
                 tint = recall.onOverdueSoon,
                 modifier = Modifier.size(20.dp),

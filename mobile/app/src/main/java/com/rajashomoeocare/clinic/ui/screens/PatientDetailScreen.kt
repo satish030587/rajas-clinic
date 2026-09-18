@@ -17,16 +17,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ArrowBack
-import androidx.compose.material.icons.automirrored.outlined.EventNote
-import androidx.compose.material.icons.outlined.Call
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.EventAvailable
-import androidx.compose.material.icons.outlined.Inventory2
-import androidx.compose.material.icons.outlined.LocalShipping
-import androidx.compose.material.icons.outlined.StarOutline
-import androidx.compose.material.icons.outlined.WavingHand
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.EventNote
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EventAvailable
+import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.WavingHand
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
@@ -47,6 +47,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -110,7 +111,7 @@ fun PatientDetailScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            Icons.AutoMirrored.Outlined.ArrowBack,
+                            Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(R.string.common_back),
                         )
                     }
@@ -118,13 +119,13 @@ fun PatientDetailScreen(
                 actions = {
                     IconButton(onClick = onEdit) {
                         Icon(
-                            Icons.Outlined.Edit,
+                            Icons.Filled.Edit,
                             contentDescription = stringResource(R.string.detail_edit),
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
+                    containerColor = Color.Transparent,
                 ),
             )
         },
@@ -132,12 +133,12 @@ fun PatientDetailScreen(
             ExtendedFloatingActionButton(
                 onClick = { viewModel.startVisit(onQueued = { onOpenVisit(it) }) },
                 icon = {
-                    Icon(Icons.AutoMirrored.Outlined.EventNote, contentDescription = null)
+                    Icon(Icons.AutoMirrored.Filled.EventNote, contentDescription = null)
                 },
                 text = { Text(stringResource(R.string.detail_new_visit)) },
             )
         },
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -202,7 +203,7 @@ fun PatientDetailScreen(
                             label = { Text(stringResource(R.string.detail_call)) },
                             leadingIcon = {
                                 Icon(
-                                    Icons.Outlined.Call,
+                                    Icons.Filled.Call,
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp),
                                 )
@@ -223,7 +224,7 @@ fun PatientDetailScreen(
                             label = { Text(stringResource(R.string.message_welcome)) },
                             leadingIcon = {
                                 Icon(
-                                    Icons.Outlined.WavingHand,
+                                    Icons.Filled.WavingHand,
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp),
                                 )
@@ -234,7 +235,7 @@ fun PatientDetailScreen(
                             label = { Text(stringResource(R.string.detail_reports)) },
                             leadingIcon = {
                                 Icon(
-                                    Icons.Outlined.Description,
+                                    Icons.Filled.Description,
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp),
                                 )
@@ -245,7 +246,7 @@ fun PatientDetailScreen(
                             label = { Text(stringResource(R.string.appointments_book)) },
                             leadingIcon = {
                                 Icon(
-                                    Icons.Outlined.EventAvailable,
+                                    Icons.Filled.EventAvailable,
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp),
                                 )
@@ -256,7 +257,7 @@ fun PatientDetailScreen(
                             label = { Text(stringResource(R.string.dispatch_title)) },
                             leadingIcon = {
                                 Icon(
-                                    Icons.Outlined.LocalShipping,
+                                    Icons.Filled.LocalShipping,
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp),
                                 )
@@ -277,7 +278,7 @@ fun PatientDetailScreen(
                             label = { Text(stringResource(R.string.review_send)) },
                             leadingIcon = {
                                 Icon(
-                                    Icons.Outlined.StarOutline,
+                                    Icons.Filled.Star,
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp),
                                 )
@@ -327,7 +328,7 @@ fun PatientDetailScreen(
             if (state.visits.isEmpty()) {
                 item {
                     EmptyState(
-                        icon = Icons.AutoMirrored.Outlined.EventNote,
+                        icon = Icons.AutoMirrored.Filled.EventNote,
                         title = stringResource(R.string.detail_no_visits),
                     )
                 }
@@ -512,7 +513,7 @@ private fun VisitCard(visit: Visit, cardLabel: String?, showBilling: Boolean) {
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
-                            Icons.Outlined.Inventory2,
+                            Icons.Filled.Inventory2,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(15.dp),

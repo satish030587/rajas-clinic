@@ -1,5 +1,6 @@
 package com.rajashomoeocare.clinic.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -14,8 +15,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Visibility
-import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -44,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rajashomoeocare.clinic.R
 import com.rajashomoeocare.clinic.ui.components.BrandLockup
+import com.rajashomoeocare.clinic.ui.theme.clinicBackgroundBrush
 import com.rajashomoeocare.clinic.ui.vm.LoginViewModel
 
 @Composable
@@ -56,8 +58,10 @@ fun LoginScreen(viewModel: LoginViewModel, onSignedIn: () -> Unit) {
     }
 
     Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
+        modifier = Modifier
+            .fillMaxSize()
+            .background(clinicBackgroundBrush()),
+        color = Color.Transparent,
     ) {
         Column(
             modifier = Modifier
@@ -117,9 +121,9 @@ fun LoginScreen(viewModel: LoginViewModel, onSignedIn: () -> Unit) {
                     IconButton(onClick = { showPassword = !showPassword }) {
                         Icon(
                             imageVector = if (showPassword) {
-                                Icons.Outlined.VisibilityOff
+                                Icons.Filled.VisibilityOff
                             } else {
-                                Icons.Outlined.Visibility
+                                Icons.Filled.Visibility
                             },
                             contentDescription = null,
                         )

@@ -11,8 +11,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.EventAvailable
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -63,11 +64,11 @@ fun AppointmentsScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.appointments_title)) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background,
+                    containerColor = Color.Transparent,
                 ),
             )
         },
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
     ) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -90,7 +91,7 @@ fun AppointmentsScreen(
             if (state.tomorrow.isEmpty() && !state.loading) {
                 item {
                     EmptyState(
-                        icon = Icons.Outlined.EventAvailable,
+                        icon = Icons.Filled.EventAvailable,
                         title = stringResource(R.string.appointments_none_tomorrow),
                     )
                 }
@@ -110,7 +111,7 @@ fun AppointmentsScreen(
                     trailing = {
                         if (alreadySent) {
                             Icon(
-                                Icons.Outlined.CheckCircle,
+                                Icons.Filled.CheckCircle,
                                 contentDescription = stringResource(
                                     R.string.appointments_reminder_sent
                                 ),

@@ -1,6 +1,9 @@
 package com.rajashomoeocare.clinic.ui
 
 import android.net.Uri
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EventAvailable
@@ -24,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -59,6 +63,7 @@ import com.rajashomoeocare.clinic.ui.vm.PatientsViewModel
 import com.rajashomoeocare.clinic.ui.vm.SettingsViewModel
 import com.rajashomoeocare.clinic.ui.vm.VisitEditorViewModel
 import com.rajashomoeocare.clinic.ui.vm.factoryOf
+import com.rajashomoeocare.clinic.ui.theme.clinicBackgroundBrush
 
 private object Routes {
     const val TODAY = "today"
@@ -125,20 +130,23 @@ fun ClinicRoot(container: AppContainer) {
     )
     val homeState by homeViewModel.state.collectAsStateWithLifecycle()
 
-    Scaffold(
-        bottomBar = {
-            ClinicBottomBar(
+    // Painted once here, behind everything: every nested Scaffold below uses a
+    // transparent containerColor so this shows through on every screen.
+    Box(modifier = Modifier.fillMaxSize().background(clinicBackgroundBrush())) {
+        Scaffold(
+            bottomBar = {
+                ClinicBottomBar(
+                    navController = navController,
+                    overdueCount = homeState.overdueCount,
+                )
+            },
+            containerColor = Color.Transparent,
+        ) { padding ->
+            NavHost(
                 navController = navController,
-                overdueCount = homeState.overdueCount,
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-    ) { padding ->
-        NavHost(
-            navController = navController,
-            startDestination = Routes.TODAY,
-            modifier = Modifier.padding(bottom = padding.calculateBottomPadding()),
-        ) {
+                startDestination = Routes.TODAY,
+                modifier = Modifier.padding(bottom = padding.calculateBottomPadding()),
+            ) {
             composable(Routes.TODAY) {
                 TodayScreen(
                     viewModel = homeViewModel,
@@ -289,6 +297,7 @@ fun ClinicRoot(container: AppContainer) {
                     },
                 )
             }
+        }
         }
     }
 }
